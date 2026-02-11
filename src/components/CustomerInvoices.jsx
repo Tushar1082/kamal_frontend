@@ -414,12 +414,12 @@ const CustomerDirectory = () => {
         setExpandedCustomers(new Set());
     }, [currentPage]);
 
-    function handleCusInvoice(invoiceNum, invId, cusId) {
-        if (!invoiceNum || !invId || !cusId) {
+    function handleCusInvoice(invoiceNum, invId, billType, cusId) {
+        if (!invoiceNum || !invId || !cusId || !billType) {
             return;
         }
 
-        setShowInvoice({ show: true, billType: 'R', invoiceNo: invoiceNum, invId: invId, cusId });
+        setShowInvoice({ show: true, billType: billType, invoiceNo: invoiceNum, invId: invId, cusId });
     }
 
     return (
@@ -632,7 +632,7 @@ const CustomerDirectory = () => {
                                                             <tbody className="divide-y divide-gray-100">
                                                                 {customer.invoices.map((invoice) => (
                                                                     <tr key={invoice.id} className="hover:bg-gray-100 cursor-pointer transition-colors">
-                                                                        <td className="px-6 py-4" onClick={() => handleCusInvoice(invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate), invoice.id, customer.cusId)}>
+                                                                        <td className="px-6 py-4" onClick={() => handleCusInvoice(invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate), invoice.id, invoice.billType, customer.cusId)}>
                                                                             <span className="font-semibold text-[#6366F1]">#{invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate)}</span>
                                                                         </td>
                                                                         <td className="px-6 py-4 text-gray-700">{invoice.billType == 'R' ? 'Retail' : 'WholeSale'}</td>

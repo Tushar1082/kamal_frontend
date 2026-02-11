@@ -6,6 +6,7 @@ import { Toaster, toast } from "react-hot-toast";
 import ItemAutocomplete from "./ItemAutocomplete";
 import PPColumn from "./PPColumn";
 import ConfirmDialog from "./ConfirmDialog";
+import { WholeSalerBillPDF } from "./wholeSalerBillPDF";
 
 export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillType, silverRate, setShowLoader, setShowInvoice, setAllCustomers }) {
     const [items, setItems] = useState([
@@ -24,7 +25,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
     ]);
 
     const [totalAmount, setTotalAmount] = useState("0");
-    const [open, setOpen] = useState({ show: false, idx: null, dbDelIdx: null });
+    const [open, setOpen] = useState(false);
     const [isAddingRow, setIsAddingRow] = useState(false);
     const lastRowRef = useRef(null);
 
@@ -143,19 +144,25 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             //     console.log(delResult);
             //     return;
             // }
-            let totalAm = 0;
+            // let totalAm = 0;
+
+            if(items.length === 1){
+                setOpen(true);
+                return;
+            }
 
             setItems((prev) => {
                 const updated = prev.filter((item, elmIdx) => (
                     elmIdx !== idx
                 ))
 
-                updated.forEach((elm) => {
-                    totalAm += elm.amount
-                })
+                // updated.forEach((elm) => {
+                //     totalAm += elm.amount
+                // })
 
                 // If everything is deleted, reset to one empty row
                 if (updated.length === 0) {
+                    isLastItem = true;
                     return [
                         {
                             itemIdx: null,
@@ -202,6 +209,43 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
         // }
 
 
+    }
+
+    const deleteInvoice = async () => {
+        try {
+            if (!invoiceId) {
+                console.log("invoiceId is missing...");
+                return;
+            }
+
+            setShowLoader(true);
+
+            const delRes = await fetch(
+                `${import.meta.env.VITE_API_URL}/customer-invoice/delete?invoiceId=${invoiceId}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+            const delResult = await delRes.json();
+
+            if (delResult.status !== 'success') {
+                toast.error('Something went wrong while deleting invoice and items');
+                console.log(delResult);
+                return;
+            }
+            toast.success(delResult.message);
+            setOpen(false);
+            setTimeout(()=>{
+                window.location.reload();
+            },1000);
+        } catch (error) {
+            console.error(error);
+            toast.error('Something Went Wrong, Try again later!');
+        }
+        finally {
+            setShowLoader(false);
+        }
     }
 
     const validateAll = () => {
@@ -380,6 +424,10 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 return;
             }
 
+            if(!isGenBill){
+                toast.success("Items Updated Successfully!");
+            }
+            
             generateBill(isGenBill);
         } catch (error) {
             console.error(error);
@@ -393,7 +441,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
 
         if (isGenBill) {
             const blob = await pdf(
-                <BillPDF items={items} silverRate={silverRate} />
+                BillType=='R'?<BillPDF items={items} silverRate={silverRate} />:<WholeSalerBillPDF items={items} silverRate={silverRate} />
             ).toBlob();
 
             window.open(URL.createObjectURL(blob));
@@ -420,23 +468,28 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             };
         });
 
-        setAllCustomers((prev) => {
-            return prev.map((pElm) => {
+        setAllCustomers(prev =>
+            prev.map(customer => {
+                if (customer.cusId !== customerId) return customer;
 
-                if (pElm.cusId === customerId) {
-                    return {
-                        ...pElm,
-                        invoices: pElm.invoices.map((elm) =>
-                            elm.id === invoiceId
-                                ? { ...elm, totalAmount: total }
-                                : elm
-                        )
-                    };
-                }
+                const updatedInvoices = customer.invoices.map(inv =>
+                    inv.id === invoiceId
+                        ? { ...inv, totalAmount: total }
+                        : inv
+                );
 
-                return pElm;
-            });
-        });
+                const invTotalSpent = updatedInvoices.reduce(
+                    (sum, inv) => sum + inv.totalAmount,
+                    0
+                );
+
+                return {
+                    ...customer,
+                    totalSpent: invTotalSpent,
+                    invoices: updatedInvoices
+                };
+            })
+        );
 
         setItems(updatedItems);
         setTotalAmount(total);
@@ -450,9 +503,9 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             }
             setShowLoader(true);
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/customer-items/${invoiceId}/items`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/customer-invoice/${invoiceId}/items`);
             const result = await response.json();
-            console.log(result);
+            // console.log(result);
             if (result.status == 'success') {
                 if (!Array.isArray(result.items)) {
                     console.log("Invoice Items Not Found!");
@@ -534,13 +587,13 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[50]">
-            {/* <ConfirmDialog
-                isOpen={open.show}
-                onClose={() => setOpen({ show: false, idx: null, dbDelIdx: null })}
-                onConfirm={deleteCusItem}
+            <ConfirmDialog
+                isOpen={open}
+                onClose={() => setOpen(false)}
+                onConfirm={deleteInvoice}
                 title="Delete Item"
-                message="Are you sure you want to delete this item?"
-            /> */}
+                message="Are you sure you want to delete this last item? If you delete then Invoice will delete."
+            />
 
             <div className="w-[80%]">
                 {/* Items container */}

@@ -5,7 +5,7 @@ import { BillPDF } from "./BillPDF";
 import { Toaster, toast } from "react-hot-toast";
 import ItemAutocomplete from "./ItemAutocomplete";
 import PPColumn from "./PPColumn";
-
+import { WholeSalerBillPDF } from "./wholeSalerBillPDF";
 
 export default function AddItems({ customer, billType, setShowLoader, handleAddCustomer }) {
     const [items, setItems] = useState([
@@ -287,7 +287,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
 
     async function generateBill() {
         const blob = await pdf(
-            <BillPDF items={items} silverRate={customer.silverRate} />
+            billType=='R'?<BillPDF items={items} silverRate={customer.silverRate} />:<WholeSalerBillPDF items={items} silverRate={customer.silverRate} />
         ).toBlob();
 
         window.open(URL.createObjectURL(blob));
@@ -355,6 +355,11 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             });
         }
     }, [items]);
+
+    useEffect(()=>{
+        setGeneratedInvoiceNo(null);
+        setInvoiceNo(null);
+    },[billType])
 
     return (
         <div className="flex">

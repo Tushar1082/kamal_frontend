@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     },
 
     weightText: {
-        flexDirection:'row',
+        flexDirection: 'row',
         fontSize: 7,
         lineHeight: 1.4,
     },
@@ -223,6 +223,12 @@ const styles = StyleSheet.create({
         fontSize: 7,
         flex: 1,
         alignItems: "center",
+        justifyContent: "center"
+    },
+    fineBox: {
+        fontSize: 7,
+        flex: 1,
+        alignItems: "start",
         justifyContent: "center"
     },
 
@@ -253,7 +259,7 @@ const styles = StyleSheet.create({
         textAlign: "center",      // ⬅️ important
     },
 
-    NameWtBox:{
+    NameWtBox: {
         flex: 1
     },
 
@@ -311,11 +317,102 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: "#555",
         marginTop: 4,
-    }
+    },
+    /* ================= PROFESSIONAL TABLE ================= */
+
+    table: {
+        marginTop: 10,
+        borderWidth: 0.8,
+        borderColor: "#000",
+    },
+
+    /* HEADER ROW */
+    tableHeader: {
+        flexDirection: "row",
+        backgroundColor: "#eeeeee",
+        borderBottomWidth: 0.8,
+        borderColor: "#000",
+    },
+
+    /* NORMAL ROW */
+    tableRow: {
+        flexDirection: "row",
+        borderBottomWidth: 0.4,
+        borderColor: "#999",
+    },
+
+    /* COMMON CELL STYLE */
+    cell: {
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        justifyContent: "center",
+    },
+
+    /* COLUMN WIDTHS */
+    colItem: {
+        width: "35%",
+        borderRightWidth: 0.5,
+        borderColor: "#000",
+    },
+
+    colRate: {
+        width: "15%",
+        textAlign: "center",
+        borderRightWidth: 0.5,
+        borderColor: "#000",
+    },
+
+    colFine: {
+        width: "15%",
+        textAlign: "center",
+        borderRightWidth: 0.5,
+        borderColor: "#000",
+    },
+
+    colLabour: {
+        width: "15%",
+        textAlign: "center",
+        borderRightWidth: 0.5,
+        borderColor: "#000",
+    },
+
+    colAmount: {
+        width: "20%",
+        textAlign: "right",
+    },
+
+    /* TEXT */
+    tableHeaderText: {
+        fontSize: 8,
+        fontWeight: "500",
+    },
+
+    tableText: {
+        fontSize: 7.5,
+    },
+
+    /* TOTAL SECTION */
+    totalSection: {
+        marginTop: 10,
+        alignItems: "flex-end",
+    },
+
+    totalBox: {
+        width: "40%",
+        borderTopWidth: 0.8,
+        paddingTop: 6,
+    },
+
+    totalFineText: {
+        fontSize: 9,
+        fontWeight: "500",
+        textAlign: "right",
+    },
+
 
 });
 
-export const BillPDF = ({ items, silverRate }) => {
+export const WholeSalerBillPDF = ({ items, silverRate }) => {
     const SCALE = 100;
 
     const grandTotal = items.reduce(
@@ -349,14 +446,14 @@ export const BillPDF = ({ items, silverRate }) => {
         return sum + net;
     }, 0) / SCALE;
 
-    const totalFine = items.reduce((sum, item)=>{
+    const totalFine = items.reduce((sum, item) => {
         const gross = Math.round(Number(item.weight || 0) * SCALE);
         const ppTotal = Math.round(getTotalPPWeight(item.ppRows) * SCALE);
 
         const net = Math.max(0, gross - ppTotal);
 
-        return net*itemPer
-    },0);
+        return item.ratePer ? net * (item.ratePer / 100) : 0;
+    }, 0);
 
 
     return (
@@ -406,53 +503,43 @@ export const BillPDF = ({ items, silverRate }) => {
                             <View style={styles.divider} />
 
 
+
+
                             {/* <Text style={styles.sectionTitle}>Issued Items</Text> */}
 
-                            {items.map((item, idx) => {
+                            {/* {items.map((item, idx) => {
                                 if (!item.itemName?.trim()) return null;
-                                // console.log(item);
                                 const gross = Number(item.weight || 0);
                                 const totalPP = getTotalPPWeight(item.ppRows);
 
                                 const net = (gross - totalPP);
 
-                                // console.log(item.ppRows);
 
                                 return (
                                     <View key={idx} style={styles.itemBlock}>
 
                                         <View style={styles.itemRow}>
-                                            {/* WEIGHT */}
                                             <View style={styles.NameWtBox}>
                                                 <Text style={styles.itemName}>{stringFLCMaker(item.itemName)}</Text>
                                                 <View style={styles.weightBox}>
-                                                    {/* {totalPP > 0 ? */}
                                                     <>
                                                         <Text style={styles.weightText} wrap={false}>
                                                             Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
                                                         </Text>
                                                         {item?.ppRows && item.ppRows.length > 0 ?
                                                             item.ppRows
-                                                            .filter((elm)=> elm.count>0 && elm.weight>0)
-                                                            .map((ppElm) => (
-                                                                <Text style={styles.weightText}>
-                                                                    PP {ppElm.weight} x {ppElm.count}
-                                                                </Text>
-                                                            )) : ""
+                                                                .filter((elm) => elm.count > 0 && elm.weight > 0)
+                                                                .map((ppElm) => (
+                                                                    <Text style={styles.weightText}>
+                                                                        PP {ppElm.weight} x {ppElm.count}
+                                                                    </Text>
+                                                                )) : ""
                                                         }
-                                                        {/* <Text style={styles.weightText}>
-                                                                PP {formatNoRound(totalPP)} g
-                                                            </Text> */}
+                                                        
                                                     </>
-                                                    {/* : <></> */}
-                                                    {/* } */}
-                                                    {/* <Text style={styles.weightText}>
-                                                        Nt wt = {formatNoRound(net)} g
-                                                    </Text> */}
                                                 </View>
                                             </View>
 
-                                            {/* RATE */}
                                             <View style={styles.rateBox}>
                                                 <Text>
                                                     RATE
@@ -464,14 +551,12 @@ export const BillPDF = ({ items, silverRate }) => {
                                                 </Text>
                                             </View>
 
-                                            {/* AMOUNT */}
-                                            <View style={styles.amountBox}>
+                                            <View style={styles.fineBox}>
                                                 <Text>
                                                     FINE
                                                 </Text>
-                                                <Text style={styles.amountText}>
-                                                    {formatNoRound(net*(item.ratePer/100))}g
-                                                    {/* {formatIndianAmount(calculateAmount(item, silverRate))} */}
+                                                <Text>
+                                                    {item.ratePer ? formatNoRound(net * (item.ratePer / 100)) + "g" : "-"}
                                                 </Text>
                                             </View>
                                         </View>
@@ -479,19 +564,18 @@ export const BillPDF = ({ items, silverRate }) => {
                                         <View style={styles.itemDivider} />
                                     </View>
                                 );
-                            })}
+                            })} */}
 
                             {/* TOTALS */}
-                            <View style={styles.totalsBox}>
+                            {/* <View style={styles.totalsBox}>
                                 <Text style={styles.totalText}>
-                                    {/* Total Weight: {totalWeight} g */}
-                                    Total Fine: {formatNoRound(totalWeight)} g
+                                    Total Fine: {formatNoRound(totalFine)} g
                                 </Text>
-                                {/* <Text style={styles.netAmount}>
+                                <Text style={styles.netAmount}>
                                     Net Amount: {rupee}
                                     {formatIndianAmount(totalAmount())}
-                                </Text> */}
-                            </View>
+                                </Text>
+                            </View> */}
 
                             {/* <View style={styles.footerDivider} /> */}
                             {/* <View style={styles.footerText}>
@@ -506,6 +590,106 @@ export const BillPDF = ({ items, silverRate }) => {
                             <Text style={styles.footerSub}>
                                 This is a computer-generated invoice.
                             </Text> */}
+
+                            {/* ================= ITEMS TABLE ================= */}
+
+                            <View style={styles.table}>
+
+                                {/* HEADER */}
+                                <View style={styles.tableHeader}>
+                                    <Text style={[styles.colItem, styles.tableHeaderText]}>
+                                        Item Name
+                                    </Text>
+
+                                    <Text style={[styles.colRate, styles.tableHeaderText]}>
+                                        Rate
+                                    </Text>
+
+                                    <Text style={[styles.colFine, styles.tableHeaderText]}>
+                                        Fine (g)
+                                    </Text>
+
+                                    <Text style={[styles.colLabour, styles.tableHeaderText]}>
+                                        Labour
+                                    </Text>
+
+                                    <Text style={[styles.colAmount, styles.tableHeaderText]}>
+                                        Amount
+                                    </Text>
+                                </View>
+
+                                {/* ROWS */}
+                                {items.map((item, idx) => {
+                                    if (!item.itemName?.trim()) return null;
+
+                                    const gross = Number(item.weight || 0);
+                                    const totalPP = getTotalPPWeight(item.ppRows);
+                                    const net = gross - totalPP;
+
+                                    const fine = item.ratePer
+                                        ? net * (item.ratePer / 100)
+                                        : 0;
+
+                                    const amount = calculateAmount(item, silverRate);
+
+                                    return (
+                                        <View key={idx} style={styles.tableRow}>
+
+                                            <View style={[styles.cell, styles.colItem]}>
+                                                <Text style={styles.tableText}>
+                                                    {stringFLCMaker(item.itemName)}
+                                                </Text>
+
+                                                <Text style={styles.weightText} wrap={false}>
+                                                    Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
+                                                </Text>
+                                                {item?.ppRows && item.ppRows.length > 0 ?
+                                                    item.ppRows
+                                                        .filter((elm) => elm.count > 0 && elm.weight > 0)
+                                                        .map((ppElm) => (
+                                                            <Text style={styles.weightText}>
+                                                                PP {ppElm.weight} x {ppElm.count}
+                                                            </Text>
+                                                        )) : ""
+                                                }
+                                            </View>
+
+                                            <View style={[styles.cell, styles.colRate]}>
+                                                <Text style={styles.tableText}>T{item.ratePer}</Text>
+                                            </View>
+
+                                            <View style={[styles.cell, styles.colFine]}>
+                                                <Text style={styles.tableText}>
+                                                    {formatNoRound(fine)}
+                                                </Text>
+                                            </View>
+
+                                            <View style={[styles.cell, styles.colLabour]}>
+                                                <Text style={styles.tableText}>0</Text>
+                                            </View>
+
+                                            <View style={[styles.cell, styles.colAmount]}>
+                                                <Text style={styles.tableText}>
+                                                    {formatIndianAmount(amount)}
+                                                </Text>
+                                            </View>
+
+                                        </View>
+
+                                    );
+                                })}
+                            </View>
+
+                            {/* ================= TOTAL FINE BELOW TABLE ================= */}
+
+                            <View style={styles.totalSection}>
+                                <View style={styles.totalBox}>
+                                    <Text style={styles.totalFineText}>
+                                        Total Fine: {formatNoRound(totalFine)} g
+                                    </Text>
+                                </View>
+                            </View>
+
 
                             <View style={styles.footer}>
                                 <Text style={styles.footerText}>
