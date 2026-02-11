@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { IndianRupee, PlusIcon, RotateCcw, Trash2 } from "lucide-react";
+import { CircleX, IndianRupee, PlusIcon, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { BillPDF } from "./BillPDF";
 import { Toaster, toast } from "react-hot-toast";
 import ItemAutocomplete from "./ItemAutocomplete";
 import PPColumn from "./PPColumn";
+import ConfirmDialog from "./ConfirmDialog";
 
-
-export default function AddItems({ customer, billType, setShowLoader, handleAddCustomer }) {
+export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillType, silverRate, setShowLoader, setShowInvoice, setAllCustomers }) {
     const [items, setItems] = useState([
         {
             itemIdx: null,
@@ -24,8 +24,8 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
     ]);
 
     const [totalAmount, setTotalAmount] = useState("0");
-    const [invoiceNo, setInvoiceNo] = useState(null);
-    const [generatedInvoiceNo, setGeneratedInvoiceNo] = useState(null);
+    const [open, setOpen] = useState({ show: false, idx: null, dbDelIdx: null });
+    const [isAddingRow, setIsAddingRow] = useState(false);
     const lastRowRef = useRef(null);
 
     const stringFLCMaker = (str) => {
@@ -59,8 +59,27 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
         }, 0);
     };
 
-    const handleRegenerate = () => {
-        window.location.reload();
+    function convertPolyArray(arr) {
+        if (!Array.isArray(arr) || arr.length === 0) {
+            return [{ count: 0, weight: 0 }];
+        }
+
+        return arr.map(item => ({
+            count: item?.noOfPPs ?? 0,
+            weight: item?.weightOfOpp ?? 0
+        }));
+    }
+
+
+    const closeInvoice = () => {
+        setShowInvoice({
+            show: false,
+            invId: null,
+            invoiceNo: null
+        });
+        setItems([]);
+        // setOpen({ show: false, idx: null, dbDelIdx: null });
+        setTotalAmount("0");
     }
 
 
@@ -94,54 +113,102 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 newItems: true
             }
         ]);
+
+        setIsAddingRow(true);
     };
 
-    const deleteCusItem = async (itemIdx, db_item_idx) => {
-        setItems((prev) => {
-            const updated = prev.filter((item, idx) => (
-                idx !== itemIdx
-            ))
+    const deleteCusItem = async (idx) => {
+        // if (!open.idx || !open.dbDelIdx) {
+        //     return;
+        // }
 
-            // If everything is deleted, reset to one empty row
-            if (updated.length === 0) {
-                return [
-                    {
-                        itemIdx: null,
-                        itemName: '',
-                        rateGm: 0,
-                        ratePer: 0,
-                        weight: 0, // gross weight
-                        ppRows: [
-                            { count: 0, weight: 0 }
-                        ],
-                        amount: "0",
-                        newItems: true
-                    }
-                ];
-            }
+        try {
+            // setShowLoader(true);
 
-            return updated;
-        });
+            // const delRes = await fetch(
+            //     `${import.meta.env.VITE_API_URL}/customer-items/delete`,
+            //     {
+            //         method: 'POST',
+            //         headers: { 'content-type': 'application/json' },
+            //         body: JSON.stringify({
+            //             itemId: open.dbDelIdx
+            //         })
+            //     }
+            // );
+
+            // const delResult = await delRes.json();
+
+            // if (delResult.status !== 'success') {
+            //     toast.error('Something went wrong while deleting items');
+            //     console.log(delResult);
+            //     return;
+            // }
+            let totalAm = 0;
+
+            setItems((prev) => {
+                const updated = prev.filter((item, elmIdx) => (
+                    elmIdx !== idx
+                ))
+
+                updated.forEach((elm) => {
+                    totalAm += elm.amount
+                })
+
+                // If everything is deleted, reset to one empty row
+                if (updated.length === 0) {
+                    return [
+                        {
+                            itemIdx: null,
+                            itemName: '',
+                            rateGm: 0,
+                            ratePer: 0,
+                            weight: 0, // gross weight
+                            ppRows: [
+                                { count: 0, weight: 0 }
+                            ],
+                            amount: "0",
+                            newItems: true
+                        }
+                    ];
+                }
+
+                return updated;
+            });
+
+            // setAllCustomers((prev) => {
+            //     return prev.map((pElm) => {
+
+            //         if (pElm.cusId === customerId) {
+            //             return {
+            //                 ...pElm,
+            //                 invoices: pElm.invoices.map((elm) =>
+            //                     elm.id === invoiceId
+            //                         ? { ...elm, totalAmount: totalAm }
+            //                         : elm
+            //                 )
+            //             };
+            //         }
+
+            //         return pElm;
+            //     });
+            // });
+
+        } catch (error) {
+            console.error(error);
+            toast.error('Something Went Wrong, Try again later!');
+        }
+        // finally {
+        //     setShowLoader(false);
+        // }
+
 
     }
 
     const validateAll = () => {
-        if (!customer.name) {
-            toast.error("Please Enter Customer Name..");
-            return false;
-        }
-
         // Add new Customer
-        if (!customer.silverRate || parseInt(customer.silverRate) <= 0) {
-            toast.error("Please Enter Valid Sliver Rate..");
+        if (!silverRate || parseInt(silverRate) <= 0) {
+            toast.error("Please Provide Valid Sliver Rate..");
             return false;
-        }
-
-        if (customer.phone) {
-            if (customer.phone.length != 10) {
-                toast.error("Phone Number Size Should be 10 Digits...");
-                return false;
-            }
         }
 
         for (let i = 0; i < items.length; i++) {
@@ -235,22 +302,62 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             };
         });
 
+    // const handleUpdate = async () => {
+    //     try {
+    //         if (!validateAll()) return;
+
+    //         setShowLoader(true);
+
+    //         const newIArr = transformItemsForBackend(items);
+
+    //         if (!customerId || newIArr.length === 0) {
+    //             toast.error("Invalid data");
+    //             return;
+    //         }
+
+    //         const response = await fetch(
+    //             `${import.meta.env.VITE_API_URL}/customer-items/add`,
+    //             {
+    //                 method: "POST",
+    //                 headers: { "content-type": "application/json" },
+    //                 body: JSON.stringify({
+    //                     Items: newIArr,
+    //                     CusId: customerId,
+    //                     InvoiceNo: invoiceId+""
+    //                 })
+    //             }
+    //         );
+
+    //         if (!response.ok) {
+    //             const errText = await response.text();
+    //             console.log(errText);
+    //             throw new Error(errText || "Server Error");
+    //         }
+
+    //         const result = await response.json();
+
+    //         toast.success(result.message || "Items Updated Successfully!");
+
+    //     } catch (error) {
+    //         console.error(error);
+    //         toast.error(error.message || "Something Went Wrong");
+    //     } finally {
+    //         setShowLoader(false);
+    //     }
+    // };
 
 
-    const previewBill = async () => {
+    const previewBill = async (isGenBill = true) => {
         try {
-            setShowLoader(true);
             if (!validateAll()) return;
+            setShowLoader(true);
 
             // ADD ITEMS
             const newIArr = transformItemsForBackend(items);
 
-            const cusId = await handleAddCustomer();
-
-            if (!cusId) {
+            if (!customerId && !invoiceId) {
                 return;
             }
-            // console.log(billType);
 
             const response = await fetch(
                 `${import.meta.env.VITE_API_URL}/customer-items/add`,
@@ -259,9 +366,9 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({
                         Items: newIArr,
-                        CusId: cusId,
-                        BillType: billType,
-                        InvoiceNo: invoiceNo
+                        CusId: customerId,
+                        BillType,
+                        InvoiceNo: invoiceId + ""
                     })
                 }
             );
@@ -273,10 +380,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 return;
             }
 
-            setInvoiceNo(result.inv_no);
-            generateBill();
-
-
+            generateBill(isGenBill);
         } catch (error) {
             console.error(error);
             toast.error('Something Went Wrong, Try again later!');
@@ -285,12 +389,15 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
         }
     };
 
-    async function generateBill() {
-        const blob = await pdf(
-            <BillPDF items={items} silverRate={customer.silverRate} />
-        ).toBlob();
+    async function generateBill(isGenBill) {
 
-        window.open(URL.createObjectURL(blob));
+        if (isGenBill) {
+            const blob = await pdf(
+                <BillPDF items={items} silverRate={silverRate} />
+            ).toBlob();
+
+            window.open(URL.createObjectURL(blob));
+        }
 
         let total = 0;
 
@@ -301,7 +408,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             if (item.rateGm > 0 && netWeight > 0) {
                 amount = Math.round(item.rateGm * netWeight);
             } else if (item.ratePer > 0 && netWeight > 0) {
-                const silverPerKg = (item.ratePer / 100) * customer.silverRate;
+                const silverPerKg = (item.ratePer / 100) * silverRate;
                 amount = Math.round((silverPerKg * netWeight) / 1000);
             }
 
@@ -313,82 +420,141 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             };
         });
 
+        setAllCustomers((prev) => {
+            return prev.map((pElm) => {
+
+                if (pElm.cusId === customerId) {
+                    return {
+                        ...pElm,
+                        invoices: pElm.invoices.map((elm) =>
+                            elm.id === invoiceId
+                                ? { ...elm, totalAmount: total }
+                                : elm
+                        )
+                    };
+                }
+
+                return pElm;
+            });
+        });
+
         setItems(updatedItems);
         setTotalAmount(total);
     }
 
+    async function fetchInvoiceItems() {
+        try {
+            if (!invoiceId) {
+                console.log("Invoice id is required!");
+                return;
+            }
+            setShowLoader(true);
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/customer-items/${invoiceId}/items`);
+            const result = await response.json();
+            console.log(result);
+            if (result.status == 'success') {
+                if (!Array.isArray(result.items)) {
+                    console.log("Invoice Items Not Found!");
+                    return;
+                }
+                let totalAm = 0;
+
+                const mappedItems = result.items.map(item => {
+                    const polythenes = item.polythenes ? convertPolyArray(item.polythenes) : [
+                        { count: 0, weight: 0 }
+                    ];
+                    const netWeight = item.grossWeight - getTotalPPWeight(polythenes); // grams only
+                    // console.log(netWeight);
+                    // let itemAmount = item.gramOrPerc === "G" ?
+                    //     Math.round(netWeight * item.rate)
+                    //     :
+                    //     Math.round(netWeight * ((silverRate * (item.rate / 100) / 1000)));
+
+                    // totalAm += itemAmount;
+
+                    let itemAmount = 0;
+
+                    if (item.gramOrPerc === "G") {
+                        itemAmount = Math.round(netWeight * item.rate);
+                    } else if (item.gramOrPerc === "P") {
+                        const effectiveRatePerGram = (silverRate * item.rate) / 100 / 1000;
+                        itemAmount = Math.round(netWeight * effectiveRatePerGram);
+                    }
+
+                    totalAm += itemAmount;
+
+
+                    return {
+                        itemIdx: item.id,
+                        itemName: stringFLCMaker(item.itemName) || "",
+
+                        rateGm: item.gramOrPerc === "G" ? Number(item.rate) : 0,
+                        ratePer: item.gramOrPerc === "P" ? Number(item.rate) : 0,
+
+                        weight: Number(item.grossWeight) || 0,
+                        ppRows: polythenes,
+
+                        amount: itemAmount,
+                        newItems: false
+                    };
+                });
+
+                setItems(mappedItems);
+                setTotalAmount(totalAm);
+            } else if (result.status == 'error') {
+                console.log("Error comes from the server...");
+                console.log(result.message);
+            } else {
+                console.log(result.message);
+            }
+
+        } catch (error) {
+            console.log("Error occur while fetching existing customer items..");
+            console.log(error);
+        } finally {
+            setShowLoader(false);
+        }
+    }
+
     useEffect(() => {
-        if (!invoiceNo || totalAmount == null) return;
-
-        const name = customer?.name
-            ?.toLowerCase()
-            ?.replace(/\s+/g, "-") || "customer";
-
-        const amount = Math.round(Number(totalAmount));
-
-        const now = new Date();
-
-        const date = now
-            .toLocaleDateString("en-GB")
-            .split("/")
-            .join("-");
-
-        const time = now
-            .toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false
-            })
-            .replace(":", "-");
-
-        const finalInvoiceNo = `${invoiceNo}-${name}-${amount}-${date}-${time}`;
-
-        setGeneratedInvoiceNo(finalInvoiceNo);
-
-    }, [invoiceNo, totalAmount]);
+        fetchInvoiceItems();
+    }, []);
 
     useEffect(() => {
-        if (lastRowRef.current) {
+        if (isAddingRow && lastRowRef.current) {
             lastRowRef.current.scrollIntoView({
                 behavior: "smooth",
                 block: "center"
             });
+
+            setIsAddingRow(false);
         }
-    }, [items]);
+    }, [items, isAddingRow]);
 
     return (
-        <div className="flex">
-            <div className="w-full">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[50]">
+            {/* <ConfirmDialog
+                isOpen={open.show}
+                onClose={() => setOpen({ show: false, idx: null, dbDelIdx: null })}
+                onConfirm={deleteCusItem}
+                title="Delete Item"
+                message="Are you sure you want to delete this item?"
+            /> */}
+
+            <div className="w-[80%]">
                 {/* Items container */}
-                <div className="rounded-xl shadow-[3px_2px_10px_-1px_lightgrey] bg-white mb-3">
+                <div className="rounded-xl bg-white mb-3">
                     <div className="flex gap-6 items-center justify-between  border-b-2 border-gray-200 pt-5 px-7 pb-5">
-                        <div className="flex gap-6 items-end">
-                            <div style={{ alignItems: 'anchor-center' }} className="flex gap-3">
-                                <img src="/billIcon.svg" width={30} alt="error" />
-                                <h1 className="font-semibold text-2xl">Itemized Billing</h1>
-                            </div>
-                            <div>
-                                <button
-                                    className="
-                                        flex items-center gap-2
-                                        rounded-lg border border-gray-200
-                                        bg-gray-100 px-4 py-2
-                                        text-sm font-medium text-gray-800
-                                        hover:bg-gray-200/80
-                                        transition
-                                    "
-                                    onClick={handleRegenerate}
-                                >
-                                    <RotateCcw className="h-4 w-4 text-gray-600" />
-                                    Re-generate
-                                </button>
-                            </div>
+                        <div style={{ alignItems: 'anchor-center' }} className="flex gap-3">
+                            <img src="/billIcon.svg" width={30} alt="error" />
+                            <h1 className="font-semibold text-2xl">Itemized Billing</h1>
                         </div>
                         <div className="px-4 py-2 bg-green-200 border-2 border-green-600 rounded-md">
-                            <p className="text-sm text-green-600 font-semibold">INV: {generatedInvoiceNo ?? "New"}</p>
+                            <p className="text-sm text-green-600 font-semibold">INV: {invoiceNum ?? "New"}</p>
                         </div>
                     </div>
-                    <div className="px-4 pt-2 pb-2">
+                    <div className="px-4 pt-2 pb-2 max-h-[60vh] overflow-auto">
                         <table className="border-separate border-spacing-4">
                             <thead>
                                 <tr>
@@ -467,7 +633,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                                                 >
                                                     <PlusIcon />
                                                 </button>
-                                                <button onClick={() => deleteCusItem(idx, item.itemIdx)} className="bg-red-600 hover:bg-red-700 transition-background duration-500 text-white cursor-pointer p-2 px-3 font-semibold rounded-lg text-md w-fit mx-auto outline-none border-none"><Trash2 size={23} /></button>
+                                                <button onClick={() => deleteCusItem(idx)} className="bg-red-600 hover:bg-red-700 transition-background duration-500 text-white cursor-pointer p-2 px-3 font-semibold rounded-lg text-md w-fit mx-auto outline-none border-none"><Trash2 size={23} /></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -476,33 +642,38 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between border border-[#6366F1] rounded-xl shadow-[3px_2px_10px_-1px_lightgrey] bg-white overflow-hidden px-8 py-6">
+                <div className="flex items-center justify-between border border-[#6366F1] rounded-xl bg-white overflow-hidden px-8 py-6">
                     <div className="ml-1">
                         <p className="text-gray-600 font-semibold text-sm">NET AMOUNT</p>
                         <h1 className="font-bold text-[#6366F1] flex items-center text-3xl"><IndianRupee strokeWidth={3} size={28} /> {formatIndianAmount(totalAmount)}</h1>
                     </div>
                     <div className="flex items-center gap-4">
                         <button
-                            className="
-                                    flex items-center gap-3
-                                    rounded-lg border border-gray-200
-                                    bg-gray-100 px-8 py-3.5
-                                    text-md font-medium text-gray-800
-                                    hover:bg-gray-200/80
-                                    transition
-                                "
-                            onClick={handleRegenerate}
-                        >
-                            <RotateCcw className="h-6 w-6 text-gray-600" />
-                            Re-generate
-                        </button>
-                        <button onClick={previewBill}
+                            onClick={previewBill}
                             className="bg-[#6366F1] hover:bg-[#4B50C1] cursor-pointer transition-background duration-500 text-white px-8 py-3.5 font-medium flex items-center gap-3 rounded-lg text-md w-fit"
                         >
                             <img src="/printer-white.svg" width={25} alt="error" />
                             <span>
                                 Generate Bill
                             </span>
+                        </button>
+                        <button onClick={() => previewBill(false)} className="bg-black/80 hover:bg-black/90 cursor-pointer transition-background duration-500 text-white pl-5 pr-8 py-3 font-medium flex items-center gap-3 rounded-lg text-md w-fit">
+                            <RefreshCw className="w-5 h-5" />
+                            Update
+                        </button>
+                        <button
+                            className="
+                                    flex items-center gap-3
+                                    rounded-lg
+                                    bg-red-500 px-8 py-3.5
+                                    text-md font-medium text-white
+                                    hover:bg-red-600
+                                    transition
+                                "
+                            onClick={closeInvoice}
+                        >
+                            <CircleX className="h-6 w-6 text-white" />
+                            Close
                         </button>
                     </div>
                 </div>

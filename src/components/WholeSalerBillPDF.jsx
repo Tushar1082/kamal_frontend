@@ -349,6 +349,15 @@ export const BillPDF = ({ items, silverRate }) => {
         return sum + net;
     }, 0) / SCALE;
 
+    const totalFine = items.reduce((sum, item)=>{
+        const gross = Math.round(Number(item.weight || 0) * SCALE);
+        const ppTotal = Math.round(getTotalPPWeight(item.ppRows) * SCALE);
+
+        const net = Math.max(0, gross - ppTotal);
+
+        return net*itemPer
+    },0);
+
 
     return (
         <Document>
@@ -451,15 +460,18 @@ export const BillPDF = ({ items, silverRate }) => {
                                                 <Text>
                                                     {item.rateGm
                                                         ? `${formatNoRound(item.rateGm)}/g`
-                                                        : `${formatIndianAmount((item.ratePer / 100) * silverRate)}/kg`}
+                                                        : `T${item.ratePer}`}
                                                 </Text>
                                             </View>
 
                                             {/* AMOUNT */}
                                             <View style={styles.amountBox}>
+                                                <Text>
+                                                    FINE
+                                                </Text>
                                                 <Text style={styles.amountText}>
-                                                    {rupee}
-                                                    {formatIndianAmount(calculateAmount(item, silverRate))}
+                                                    {formatNoRound(net*(item.ratePer/100))}g
+                                                    {/* {formatIndianAmount(calculateAmount(item, silverRate))} */}
                                                 </Text>
                                             </View>
                                         </View>
@@ -473,12 +485,12 @@ export const BillPDF = ({ items, silverRate }) => {
                             <View style={styles.totalsBox}>
                                 <Text style={styles.totalText}>
                                     {/* Total Weight: {totalWeight} g */}
-                                    Total Weight: {formatNoRound(totalWeight)} g
+                                    Total Fine: {formatNoRound(totalWeight)} g
                                 </Text>
-                                <Text style={styles.netAmount}>
+                                {/* <Text style={styles.netAmount}>
                                     Net Amount: {rupee}
                                     {formatIndianAmount(totalAmount())}
-                                </Text>
+                                </Text> */}
                             </View>
 
                             {/* <View style={styles.footerDivider} /> */}

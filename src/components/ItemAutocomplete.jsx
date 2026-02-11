@@ -36,12 +36,14 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
             setItems((prev) =>
                 prev.map((it, i) => {
                     if (i === idx) {
-                        const field =
-                            data.rateType === "gram" ? "rateGm" : "ratePer";
+                        // const field =
+                        //     data.rateType === "gram" ? "rateGm" : "ratePer";
 
                         return {
                             ...it,
-                            [field]: data.rate
+                            rateGm: data.rateType === "gram" ? data.rate : 0,
+                            ratePer: data.rateType === "percentage" ? data.rate : 0
+                            // [field]: data.rate
                         };
                     }
                     return it;
@@ -62,6 +64,7 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
         >
             <div className="relative">
                 <Combobox.Input
+                    autoComplete="off"
                     className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Item"
                     value={value}
@@ -73,13 +76,13 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
                 />
 
                 {fetchItems.length > 0 && (
-                    <Combobox.Options className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-auto">
+                    <Combobox.Options style={{ width: "max-content" }} className="absolute z-50 mt-1  w-max min-w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-auto">
                         {fetchItems.map((item, idx) => (
                             <Combobox.Option
                                 key={idx}
                                 value={item}
                                 className={({ active }) =>
-                                    `px-4 py-2 cursor-pointer ${active ? "bg-blue-100" : ""
+                                    `px-4 py-2  whitespace-nowrap cursor-pointer ${active ? "bg-blue-100" : ""
                                     }`
                                 }
                             >
