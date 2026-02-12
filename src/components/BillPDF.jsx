@@ -63,14 +63,6 @@ const calculateAmount = (item, silverRate) => {
     return 0;
 };
 
-
-// const formatNoRound = (num, decimals = 2) => {
-//     if (Number.isInteger(num)) return num;
-
-//     const factor = Math.pow(10, decimals);
-//     return Math.trunc(num * factor) / factor;
-// };
-
 const formatNoRound = (num, decimals = 2) => {
     if (Number.isInteger(num)) return num;
 
@@ -119,7 +111,7 @@ const styles = StyleSheet.create({
 
 
     topHalf: {
-        height: "50%",
+        // height: "50%",
         width: "70%",
         margin: "0px auto"
     },
@@ -182,10 +174,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
 
-    borderBottom: {
-        borderBottom: 0.3,
-        width: '12%'
-    },
+    // borderBottom: {
+    //     borderBottom: 0.3,
+    //     width: '12%',
+    //     paddingBottom: 1
+    // },
 
     sectionTitle: {
         fontSize: 10,
@@ -318,10 +311,6 @@ const styles = StyleSheet.create({
 export const BillPDF = ({ items, silverRate }) => {
     const SCALE = 100;
 
-    const grandTotal = items.reduce(
-        (sum, i) => sum + Number(i.amount || 0),
-        0
-    );
     function totalAmount() {
         let totalAm = 0;
 
@@ -331,14 +320,6 @@ export const BillPDF = ({ items, silverRate }) => {
 
         return totalAm;
     }
-
-
-
-    // const totalWeight = items.reduce(
-    //     (sum, i) =>
-    //         sum + Math.max(0, Number(i.weight || 0) - Number(i.pp || 0)),
-    //     0
-    // );
 
     const totalWeight = items.reduce((sum, item) => {
         const gross = Math.round(Number(item.weight || 0) * SCALE);
@@ -396,9 +377,6 @@ export const BillPDF = ({ items, silverRate }) => {
 
                             <View style={styles.divider} />
 
-
-                            {/* <Text style={styles.sectionTitle}>Issued Items</Text> */}
-
                             {items.map((item, idx) => {
                                 if (!item.itemName?.trim()) return null;
                                 // console.log(item);
@@ -406,8 +384,6 @@ export const BillPDF = ({ items, silverRate }) => {
                                 const totalPP = getTotalPPWeight(item.ppRows);
 
                                 const net = (gross - totalPP);
-
-                                // console.log(item.ppRows);
 
                                 return (
                                     <View key={idx} style={styles.itemBlock}>
@@ -431,15 +407,7 @@ export const BillPDF = ({ items, silverRate }) => {
                                                                 </Text>
                                                             )) : ""
                                                         }
-                                                        {/* <Text style={styles.weightText}>
-                                                                PP {formatNoRound(totalPP)} g
-                                                            </Text> */}
                                                     </>
-                                                    {/* : <></> */}
-                                                    {/* } */}
-                                                    {/* <Text style={styles.weightText}>
-                                                        Nt wt = {formatNoRound(net)} g
-                                                    </Text> */}
                                                 </View>
                                             </View>
 
@@ -472,7 +440,6 @@ export const BillPDF = ({ items, silverRate }) => {
                             {/* TOTALS */}
                             <View style={styles.totalsBox}>
                                 <Text style={styles.totalText}>
-                                    {/* Total Weight: {totalWeight} g */}
                                     Total Weight: {formatNoRound(totalWeight)} g
                                 </Text>
                                 <Text style={styles.netAmount}>
@@ -480,20 +447,6 @@ export const BillPDF = ({ items, silverRate }) => {
                                     {formatIndianAmount(totalAmount())}
                                 </Text>
                             </View>
-
-                            {/* <View style={styles.footerDivider} /> */}
-                            {/* <View style={styles.footerText}>
-                                <Text>
-                                    Thank you for your business
-                                </Text>
-                                <Text>
-                                    Follow us on our instagram page @kamaljewellersagra
-                                </Text>
-                            </View>
-
-                            <Text style={styles.footerSub}>
-                                This is a computer-generated invoice.
-                            </Text> */}
 
                             <View style={styles.footer}>
                                 <Text style={styles.footerText}>

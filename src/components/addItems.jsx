@@ -250,7 +250,6 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             if (!cusId) {
                 return;
             }
-            // console.log(billType);
 
             const response = await fetch(
                 `${import.meta.env.VITE_API_URL}/customer-items/add`,
@@ -287,7 +286,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
 
     async function generateBill() {
         const blob = await pdf(
-            billType=='R'?<BillPDF items={items} silverRate={customer.silverRate} />:<WholeSalerBillPDF items={items} silverRate={customer.silverRate} />
+            billType == 'R' ? <BillPDF items={items} silverRate={customer.silverRate} /> : <WholeSalerBillPDF items={items} silverRate={customer.silverRate} />
         ).toBlob();
 
         window.open(URL.createObjectURL(blob));
@@ -317,12 +316,28 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
         setTotalAmount(total);
     }
 
+    function formatName(fullName) {
+        if (!fullName) return "";
+
+        // Remove extra spaces and split into words
+        const parts = fullName.trim().split(/\s+/);
+
+        // If only one name exists, return it
+        if (parts.length === 1) {
+            return parts[0];
+        }
+
+        const firstName = parts[0];
+        const lastName = parts[parts.length - 1];
+
+        return `${firstName}-${lastName}`;
+    }
+
+
     useEffect(() => {
         if (!invoiceNo || totalAmount == null) return;
 
-        const name = customer?.name
-            ?.toLowerCase()
-            ?.replace(/\s+/g, "-") || "customer";
+        const name = customer?.name?.toLowerCase();
 
         const amount = Math.round(Number(totalAmount));
 
@@ -341,7 +356,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             })
             .replace(":", "-");
 
-        const finalInvoiceNo = `${invoiceNo}-${name}-${amount}-${date}-${time}`;
+        const finalInvoiceNo = `${invoiceNo}-${formatName(name??"customer")}-${amount}-${date}-${time}`;
 
         setGeneratedInvoiceNo(finalInvoiceNo);
 
@@ -356,10 +371,10 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
         }
     }, [items]);
 
-    useEffect(()=>{
+    useEffect(() => {
         setGeneratedInvoiceNo(null);
         setInvoiceNo(null);
-    },[billType])
+    }, [billType])
 
     return (
         <div className="flex">

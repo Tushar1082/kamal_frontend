@@ -49,8 +49,41 @@ const CustomerDirectory = () => {
         return word;
     };
 
-    const updateSilverRate = ()=>{
-        if(silverRate){
+    function formatName(fullName) {
+        if (!fullName) return "";
+
+        // Remove extra spaces and split into words
+        const parts = fullName.trim().split(/\s+/);
+
+        // If only one name exists, return it
+        if (parts.length === 1) {
+            return parts[0];
+        }
+
+        const firstName = parts[0];
+        const lastName = parts[parts.length - 1];
+
+        return `${firstName}-${lastName}`;
+    }
+
+    function formatIndianAmount(amount) {
+        if (!amount) return "";
+        return Number(amount).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+        });
+    }
+
+    const handleSilverRateChange = (e) => {
+        const rawValue = e.target.value.replace(/,/g, "");
+
+        // Allow only numbers and optional decimal
+        if (/^\d*\.?\d*$/.test(rawValue)) {
+            setSilverRate(rawValue);
+        }
+    };
+
+    const updateSilverRate = () => {
+        if (silverRate) {
             localStorage.setItem('kamal_silver_rate', silverRate);
             toast.success('Silver rate updated successfully!');
         }
@@ -66,10 +99,8 @@ const CustomerDirectory = () => {
 
             const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/summary?silverRate=${silverRate}`);
             const result = await response.json();
-            // console.log(result);
 
             if (result.status == 'success') {
-                // console.log(result);
 
                 if (!Array.isArray(result.data)) {
                     console.log("Customers Data Not Found!");
@@ -186,92 +217,6 @@ const CustomerDirectory = () => {
         }
     }
 
-    // const deleteCusItem = async (itemIdx, db_item_idx) => {
-
-    //     try {
-    //         setShowLoader(true);
-
-    //         if (db_item_idx == null) {
-    //             console.log('del query not run for this time..');
-    //             setItems((prev) => {
-    //                 const updated = prev.filter((item, idx) => (
-    //                     idx !== itemIdx
-    //                 ))
-
-    //                 // If everything is deleted, reset to one empty row
-    //                 if (updated.length === 0) {
-    //                     return [
-    //                         {
-    //                             itemIdx: null,
-    //                             itemName: '',
-    //                             rateGm: 0,
-    //                             pp: 0,
-    //                             ratePer: 0,
-    //                             weight: 0,
-    //                             amount: "0",
-    //                             newItems: true
-    //                         }
-    //                     ];
-    //                 }
-
-    //                 return updated;
-    //             });
-    //             return;
-    //         }
-
-    //         const delRes = await fetch(
-    //             `${import.meta.env.VITE_API_URL}/customer-items/delete`,
-    //             {
-    //                 method: 'POST',
-    //                 headers: { 'content-type': 'application/json' },
-    //                 body: JSON.stringify({
-    //                     cusId: customerDetails.cus_id,
-    //                     delId: db_item_idx
-    //                 })
-    //             }
-    //         );
-
-    //         const delResult = await delRes.json();
-
-    //         if (delResult.status !== 'success') {
-    //             toast.error('Something went wrong while deleting items');
-    //             console.log(delResult);
-    //             return;
-    //         }
-
-    //         setItems((prev) => {
-    //             const updated = prev.filter((item, idx) => (
-    //                 idx !== itemIdx
-    //             ))
-
-    //             // If everything is deleted, reset to one empty row
-    //             if (updated.length === 0) {
-    //                 return [
-    //                     {
-    //                         itemIdx: null,
-    //                         itemName: '',
-    //                         rateGm: 0,
-    //                         pp: 0,
-    //                         ratePer: 0,
-    //                         weight: 0,
-    //                         amount: "0",
-    //                         newItems: true
-    //                     }
-    //                 ];
-    //             }
-
-    //             return updated;
-    //         });
-
-    //     } catch (error) {
-    //         console.error(error);
-    //         toast.error('Something Went Wrong, Try again later!');
-    //     } finally {
-    //         setShowLoader(false);
-    //     }
-
-    // }
-
     const handleRowClick = (customerId) => {
         setExpandedCustomers(prev => {
             const newSet = new Set(prev);
@@ -306,9 +251,6 @@ const CustomerDirectory = () => {
             return;
         }
 
-        // console.log(searchQuery);
-        // return;
-
         const updated = allCustomers.filter(c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             c.phone?.includes(searchQuery)
@@ -337,8 +279,7 @@ const CustomerDirectory = () => {
     };
 
     const invoiceMaker = (invId, name, amount, datetime) => {
-        const cusName =
-            name?.toLowerCase()?.replace(/\s+/g, "-") || "customer";
+        const cusName = name?.toLowerCase();
 
         const cusAmount = Math.round(Number(amount));
 
@@ -355,7 +296,7 @@ const CustomerDirectory = () => {
             .slice(0, 2)
             .join("-");
 
-        const finalInvoiceNo = `${invId}-${cusName}-${cusAmount}-${date}-${time}`;
+        const finalInvoiceNo = `${invId}-${formatName(cusName ?? "customer")}-${cusAmount}-${date}-${time}`;
         return finalInvoiceNo;
     };
 
@@ -425,7 +366,21 @@ const CustomerDirectory = () => {
     return (
         <div className="flex gap-4">
             <SideBar showLoader={showLoader} />
-            {showInvoice.show && <ViewInvoices invoiceNum={showInvoice.invoiceNo} invoiceId={showInvoice.invId} customerId={showInvoice.cusId} BillType={showInvoice.billType} silverRate={silverRate} setShowLoader={setShowLoader} setShowInvoice={setShowInvoice} setAllCustomers={setAllCustomers} />}
+            {showInvoice.show && 
+                <ViewInvoices 
+                    invoiceNum={showInvoice.invoiceNo} 
+                    invoiceId={showInvoice.invId} 
+                    customerId={showInvoice.cusId} 
+                    BillType={showInvoice.billType} 
+                    silverRate={silverRate} 
+                    setShowLoader={setShowLoader} 
+                    setShowInvoice={setShowInvoice} 
+                    setAllCustomers={setAllCustomers} 
+                    currentPage={currentPage} 
+                    setCurrentPage={setCurrentPage} 
+                />
+            }
+            
             <div className="p-5 pt-8 mb-10 mx-auto w-[80%]">
                 <div className="">
                     <div className="max-w-7xl mx-auto">
@@ -454,9 +409,6 @@ const CustomerDirectory = () => {
                                         <div ref={datePickerRef} id="datePickerMain" className="absolute -right-[12.3rem] top-16 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[280px]">
                                             <div className="flex items-center justify-between mb-3">
                                                 <h3 className="font-semibold text-gray-900 text-sm">Date Range</h3>
-                                                {/* <button onClick={() => setShowDatePicker(false)} className="text-gray-400 hover:text-gray-600">
-                                                    <X className="w-4 h-4" />
-                                                </button> */}
                                             </div>
                                             <div className="flex gap-4 items-end">
                                                 <div>
@@ -530,9 +482,10 @@ const CustomerDirectory = () => {
                         <div className="flex items-center gap-4">
                             <div className="w-fit mb-4 ml-1 gap-3">
                                 <h1 className="text-sm font-semibold text-gray-500 whitespace-nowrap">Silver Rate(kg):</h1>
-                                <input type="number"
-                                    value={silverRate ?? 0}
-                                    onChange={(e) => setSilverRate(e.target.value)}
+                                <input
+                                    type="text"
+                                    value={formatIndianAmount(silverRate)}
+                                    onChange={handleSilverRateChange}
                                     placeholder="Silver rate"
                                     className="w-full px-4 py-3 text-md shadow-[0_0_14px_-2px_#d3d3d3] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 />
@@ -548,7 +501,7 @@ const CustomerDirectory = () => {
 
                         {/* Table */}
                         <div className="bg-white rounded-lg clear-both shadow-[0_0_14px_-2px_#d3d3d3] overflow-hidden">
-                            {/* Desktop Table Header */}
+                            {/* Table Header */}
                             <div className="hidden lg:grid grid-cols-4 gap-4 px-4 py-[1.3rem] bg-gray-50 border-b border-gray-200 font-semibold text-gray-600 uppercase tracking-wider">
                                 <div className="text-start ml-8">Customer Name</div>
                                 <div className="text-start">Contact Details</div>
@@ -625,7 +578,6 @@ const CustomerDirectory = () => {
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Bill Type</th>
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Net Weight (g)</th>
-                                                                    {/* <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th> */}
                                                                     <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Amount</th>
                                                                 </tr>
                                                             </thead>
@@ -638,11 +590,6 @@ const CustomerDirectory = () => {
                                                                         <td className="px-6 py-4 text-gray-700">{invoice.billType == 'R' ? 'Retail' : 'WholeSale'}</td>
                                                                         <td className="px-6 py-4 text-gray-700">{formatDate(invoice.invoiceDate)}</td>
                                                                         <td className="px-6 py-4 text-gray-700">{invoice.netWeight}g</td>
-                                                                        {/* <td className="px-6 py-4">
-                                                                            <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-bold bg-green-100 text-green-700">
-                                                                                PAID
-                                                                            </span>
-                                                                        </td> */}
                                                                         <td className="px-6 py-4 text-right font-bold text-gray-900">{formatCurrency(invoice.totalAmount)}</td>
                                                                     </tr>
                                                                 ))}
@@ -692,31 +639,6 @@ const CustomerDirectory = () => {
 
                                     {/* Page Numbers */}
                                     <div className="flex items-center gap-1">
-                                        {/* {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                                            let pageNum;
-                                            if (totalPages <= 5) {
-                                                pageNum = idx + 1;
-                                            } else if (currentPage <= 3) {
-                                                pageNum = idx + 1;
-                                            } else if (currentPage >= totalPages - 2) {
-                                                pageNum = totalPages - 4 + idx;
-                                            } else {
-                                                pageNum = currentPage - 2 + idx;
-                                            }
-
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                    className={`px-3 py-2 text-sm font-medium rounded-lg ${currentPage === pageNum
-                                                        ? 'text-white bg-indigo-600 border border-indigo-600'
-                                                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    {pageNum}
-                                                </button>
-                                            );
-                                        })} */}
                                         {totalPages > 1 &&
                                             [...Array(Math.min(5, totalPages))].map((_, idx) => {
                                                 let pageNum;

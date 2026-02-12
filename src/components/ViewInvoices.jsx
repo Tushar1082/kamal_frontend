@@ -7,8 +7,9 @@ import ItemAutocomplete from "./ItemAutocomplete";
 import PPColumn from "./PPColumn";
 import ConfirmDialog from "./ConfirmDialog";
 import { WholeSalerBillPDF } from "./wholeSalerBillPDF";
+import { WholeSalerBillPDFA } from "./WholeSalerBillPDF_";
 
-export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillType, silverRate, setShowLoader, setShowInvoice, setAllCustomers }) {
+export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillType, silverRate, setShowLoader, setShowInvoice, setAllCustomers, currentPage, setCurrentPage }) {
     const [items, setItems] = useState([
         {
             itemIdx: null,
@@ -441,7 +442,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
 
         if (isGenBill) {
             const blob = await pdf(
-                BillType=='R'?<BillPDF items={items} silverRate={silverRate} />:<WholeSalerBillPDF items={items} silverRate={silverRate} />
+                BillType=='R'?<BillPDF items={items} silverRate={silverRate} />:<WholeSalerBillPDFA items={items} silverRate={silverRate} />
             ).toBlob();
 
             window.open(URL.createObjectURL(blob));
@@ -468,6 +469,8 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             };
         });
 
+        // let curPage = currentPage;
+
         setAllCustomers(prev =>
             prev.map(customer => {
                 if (customer.cusId !== customerId) return customer;
@@ -493,6 +496,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
 
         setItems(updatedItems);
         setTotalAmount(total);
+        // setCurrentPage(curPage);
     }
 
     async function fetchInvoiceItems() {

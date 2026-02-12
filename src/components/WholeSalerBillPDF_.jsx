@@ -63,14 +63,6 @@ const calculateAmount = (item, silverRate) => {
     return 0;
 };
 
-
-// const formatNoRound = (num, decimals = 2) => {
-//     if (Number.isInteger(num)) return num;
-
-//     const factor = Math.pow(10, decimals);
-//     return Math.trunc(num * factor) / factor;
-// };
-
 const formatNoRound = (num, decimals = 2) => {
     if (Number.isInteger(num)) return num;
 
@@ -119,7 +111,7 @@ const styles = StyleSheet.create({
 
 
     topHalf: {
-        height: "50%",
+        // height: "50%",
         width: "70%",
         margin: "0px auto"
     },
@@ -182,10 +174,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
 
-    borderBottom: {
-        borderBottom: 0.3,
-        width: '12%'
-    },
+    // borderBottom: {
+    //     borderBottom: 0.3,
+    //     width: '12%',
+    //     paddingBottom: 1
+    // },
 
     sectionTitle: {
         fontSize: 10,
@@ -213,22 +206,16 @@ const styles = StyleSheet.create({
     weightBox: {
     },
 
-    // weightText: {
-    //     flexDirection: 'row',
-    //     fontSize: 7,
-    //     lineHeight: 1.4,
-    // },
+    weightText: {
+        flexDirection: 'row',
+        fontSize: 7,
+        lineHeight: 1.4,
+    },
 
     rateBox: {
         fontSize: 7,
         flex: 1,
         alignItems: "center",
-        justifyContent: "center"
-    },
-    fineBox: {
-        fontSize: 7,
-        flex: 1,
-        alignItems: "start",
         justifyContent: "center"
     },
 
@@ -289,11 +276,6 @@ const styles = StyleSheet.create({
         fontSize: 7,
     },
 
-    fineTotalText:{
-        fontSize: 7,
-        marginBottom: 1
-    },
-
     netAmount: {
         fontSize: 9,
         fontWeight: "500",
@@ -324,109 +306,95 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
 
-    /* ================= PROFESSIONAL TABLE (IMPROVED) ================= */
+    /* ================= NON TABULAR ITEM STYLE ================= */
 
-    table: {
-        marginTop: 12,
-        borderWidth: 0.6,
-        borderColor: "#444",
+    itemsWrapper: {
+        // marginTop: 10,
     },
 
-    tableHeader: {
+    // itemBlock: {
+    // paddingVertical: 7,
+    // },
+
+    itemTopRow: {
         flexDirection: "row",
-        backgroundColor: "#f4f4f4",
-        borderBottomWidth: 0.5,
-        borderColor: "#444",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
     },
 
-    tableRow: {
-        flexDirection: "row",
-        borderBottomWidth: 0.3,
-        borderColor: "#ccc",
+    itemLeft: {
+        flex: 1
     },
 
-    cell: {
-        paddingVertical: 7,
-        paddingHorizontal: 6,
-        justifyContent: "flex-start"
+    // itemName: {
+    //     fontSize: 9,
+    //     fontWeight: "500",
+    //     marginBottom: 2,
+    // },
+
+    itemDetails: {
+        fontSize: 7,
+        color: "#444",
+        lineHeight: 1.4,
     },
 
-    /* COLUMN WIDTHS (Better Proportions) */
-    colItem: {
-        width: "38%",
-        borderRightWidth: 0.3,
-        borderColor: "#ccc",
+    itemRateBlock: {
+        flex: 1,
+        alignItems: "center",
     },
 
-    colRate: {
-        width: "12%",
-        textAlign: "center",
-        borderRightWidth: 0.3,
-        borderColor: "#ccc",
+    rateLabel: {
+        fontSize: 6.5,
+        color: "#666",
+        marginBottom: 2,
     },
 
-    colFine: {
-        width: "15%",
-        textAlign: "right",
-        borderRightWidth: 0.3,
-        borderColor: "#ccc",
-    },
-
-    colLabour: {
-        width: "12%",
-        textAlign: "right",
-        borderRightWidth: 0.3,
-        borderColor: "#ccc",
-    },
-
-    colAmount: {
-        width: "23%",
-        textAlign: "right",
-    },
-
-    tableHeaderText: {
-        fontSize: 8.5,
+    rateValue: {
+        fontSize: 8,
         fontWeight: "500",
     },
 
-    tableText: {
-        fontSize: 8,
-    },
-
-    weightText: {
-        fontSize: 6.8,
-        color: "#555",
-        marginTop: 2,
-    },
-
-    /* TOTAL SECTION IMPROVED */
-    totalSection: {
-        marginTop: 12,
+    itemAmount: {
+        flex: 1,
+        // width: "25%",
         alignItems: "flex-end",
     },
 
-    totalBox: {
-        width: "45%",
-        // borderTopWidth: 1,
-        borderColor: "#000",
-        // paddingTop: 6,
+    // amountText: {
+    //     fontSize: 9,
+    //     fontWeight: "500",
+    // },
+
+    // itemDivider: {
+    //     borderTopWidth: 0.4,
+    //     borderColor: "#bbb",
+    //     marginTop: 8,
+    // },
+
+    /* TOTAL SECTION */
+
+    summarySection: {
+        marginTop: 14,
+        alignItems: "flex-end",
     },
 
-    totalFineText: {
-        fontSize: 9.5,
-        fontWeight: "500",
-        textAlign: "right",
-    }
+    summaryText: {
+        fontSize: 8,
+        marginBottom: 2,
+    },
+
+    netAmountText: {
+        fontSize: 11,
+        fontWeight: "700",
+        marginTop: 4,
+    },
+
 
 });
 
-export const WholeSalerBillPDF = ({ items, silverRate }) => {
+export const WholeSalerBillPDFA = ({ items, silverRate }) => {
     const SCALE = 100;
 
-    const grandTotal = items.reduce(
-        (sum, i) => sum + Number(i.amount || 0),
-        0
-    );
     function totalAmount() {
         let totalAm = 0;
 
@@ -436,14 +404,14 @@ export const WholeSalerBillPDF = ({ items, silverRate }) => {
 
         return totalAm;
     }
+    const totalFine = items.reduce((sum, item) => {
+        const gross = Math.round(Number(item.weight || 0) * SCALE);
+        const ppTotal = Math.round(getTotalPPWeight(item.ppRows) * SCALE);
 
+        const net = Math.max(0, gross - ppTotal);
 
-
-    // const totalWeight = items.reduce(
-    //     (sum, i) =>
-    //         sum + Math.max(0, Number(i.weight || 0) - Number(i.pp || 0)),
-    //     0
-    // );
+        return item.ratePer ? net * (item.ratePer / 100) : 0;
+    }, 0);
 
     const totalWeight = items.reduce((sum, item) => {
         const gross = Math.round(Number(item.weight || 0) * SCALE);
@@ -453,15 +421,6 @@ export const WholeSalerBillPDF = ({ items, silverRate }) => {
 
         return sum + net;
     }, 0) / SCALE;
-
-    const totalFine = items.reduce((sum, item) => {
-        const gross = Math.round(Number(item.weight || 0) * SCALE);
-        const ppTotal = Math.round(getTotalPPWeight(item.ppRows) * SCALE);
-
-        const net = Math.max(0, gross - ppTotal);
-
-        return item.ratePer ? net * (item.ratePer / 100) : 0;
-    }, 0);
 
 
     return (
@@ -510,96 +469,88 @@ export const WholeSalerBillPDF = ({ items, silverRate }) => {
 
                             <View style={styles.divider} />
 
-                            {/* ================= ITEMS TABLE ================= */}
-
-                            <View style={styles.table}>
-
-                                {/* HEADER */}
-                                <View style={styles.tableHeader}>
-                                    <View style={[styles.cell, styles.colItem]}>
-                                        <Text style={styles.tableHeaderText}>Item Name</Text>
-                                    </View>
-
-                                    <View style={[styles.cell, styles.colRate]}>
-                                        <Text style={styles.tableHeaderText}>Rate</Text>
-                                    </View>
-
-                                    <View style={[styles.cell, styles.colFine]}>
-                                        <Text style={styles.tableHeaderText}>Fine (g)</Text>
-                                    </View>
-
-                                    <View style={[styles.cell, styles.colLabour]}>
-                                        <Text style={styles.tableHeaderText}>Labour</Text>
-                                    </View>
-
-                                    <View style={[styles.cell, styles.colAmount]}>
-                                        <Text style={styles.tableHeaderText}>Amount</Text>
-                                    </View>
-                                </View>
-
-
-                                {/* ROWS */}
+                            <View style={styles.itemsWrapper}>
                                 {items.map((item, idx) => {
                                     if (!item.itemName?.trim()) return null;
 
                                     const gross = Number(item.weight || 0);
                                     const totalPP = getTotalPPWeight(item.ppRows);
                                     const net = gross - totalPP;
-
-                                    const fine = item.ratePer
-                                        ? net * (item.ratePer / 100)
-                                        : 0;
-
                                     const amount = calculateAmount(item, silverRate);
 
                                     return (
-                                        <View key={idx} style={styles.tableRow}>
+                                        <View key={idx} style={styles.itemBlock}>
+                                            <View style={styles.itemTopRow}>
 
-                                            <View style={[styles.cell, styles.colItem]}>
-                                                <Text style={styles.tableText}>
-                                                    {stringFLCMaker(item.itemName)}
-                                                </Text>
+                                                {/* LEFT SIDE */}
+                                                <View style={styles.itemLeft}>
+                                                    <Text style={styles.itemName}>
+                                                        {stringFLCMaker(item.itemName)}
+                                                    </Text>
 
-                                                <Text style={styles.weightText} wrap={false}>
-                                                    Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
-                                                </Text>
-                                                {item?.ppRows && item.ppRows.length > 0 ?
-                                                    item.ppRows
-                                                        .filter((elm) => elm.count > 0 && elm.weight > 0)
-                                                        .map((ppElm) => (
-                                                            <Text style={styles.weightText}>
-                                                                PP {ppElm.weight} x {ppElm.count}
-                                                            </Text>
-                                                        )) : ""
-                                                }
+                                                    <Text style={styles.itemDetails}>
+                                                        Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
+                                                    </Text>
+
+                                                    {item?.ppRows &&
+                                                        item.ppRows
+                                                            .filter((elm) => elm.count > 0 && elm.weight > 0)
+                                                            .map((ppElm, i) => (
+                                                                <Text key={i} style={styles.itemDetails}>
+                                                                    PP {ppElm.weight} x {ppElm.count}
+                                                                </Text>
+                                                            ))}
+                                                </View>
+
+                                                {/* CENTER RATE */}
+                                                <View style={styles.itemRateBlock}>
+                                                    <Text style={styles.rateLabel}>RATE</Text>
+                                                    <Text style={styles.rateValue}>
+                                                        {item.rateGm
+                                                            ? `${formatNoRound(item.rateGm)}/g`
+                                                            : `${formatIndianAmount(silverRate)}/kg`}
+                                                    </Text>
+                                                </View>
+
+                                                {/* CENTER Labour */}
+                                                <View style={styles.itemRateBlock}>
+                                                    <Text style={styles.rateLabel}>FINE</Text>
+                                                    <Text style={styles.rateValue}>
+                                                        0
+                                                        {/* {item.rateGm
+                                                            ? `${formatNoRound(item.rateGm)}/g`
+                                                            : `${formatIndianAmount(silverRate)}/kg`} */}
+                                                    </Text>
+                                                </View>
+
+                                                {/* CENTER Labour */}
+                                                <View style={styles.itemRateBlock}>
+                                                    <Text style={styles.rateLabel}>LABOUR</Text>
+                                                    <Text style={styles.rateValue}>
+                                                        0
+                                                        {/* {item.rateGm
+                                                            ? `${formatNoRound(item.rateGm)}/g`
+                                                            : `${formatIndianAmount(silverRate)}/kg`} */}
+                                                    </Text>
+                                                </View>
+
+                                                {/* RIGHT AMOUNT */}
+                                                <View style={styles.itemAmount}>
+                                                    <Text style={styles.amountText}>
+                                                        ₹{formatIndianAmount(amount)}
+                                                    </Text>
+                                                </View>
+
                                             </View>
 
-                                            <View style={[styles.cell, styles.colRate]}>
-                                                <Text style={styles.tableText}>{item.ratePer > 0 ? ("T" + item.ratePer) : item.rateGm + "g"}</Text>
-                                            </View>
-
-                                            <View style={[styles.cell, styles.colFine]}>
-                                                <Text style={styles.tableText}>
-                                                    {formatNoRound(fine)}
-                                                </Text>
-                                            </View>
-
-                                            <View style={[styles.cell, styles.colLabour]}>
-                                                <Text style={styles.tableText}>0</Text>
-                                            </View>
-
-                                            <View style={[styles.cell, styles.colAmount]}>
-                                                <Text style={styles.tableText}>
-                                                    {formatIndianAmount(amount)}
-                                                </Text>
-                                            </View>
-
+                                            <View style={styles.itemDivider} />
                                         </View>
-
                                     );
                                 })}
                             </View>
 
+
+                            {/* TOTALS */}
                             <View style={styles.totalsBox}>
                                 <Text style={styles.fineTotalText}>
                                     Total Fine: {formatNoRound(totalFine)} g
@@ -612,7 +563,6 @@ export const WholeSalerBillPDF = ({ items, silverRate }) => {
                                     {formatIndianAmount(totalAmount())}
                                 </Text>
                             </View>
-
 
                             <View style={styles.footer}>
                                 <Text style={styles.footerText}>

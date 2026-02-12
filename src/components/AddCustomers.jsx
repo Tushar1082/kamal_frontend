@@ -1,41 +1,39 @@
 import { useState } from "react";
 import SideBar from "./SideBar";
-import AddItems from "./addItems";
+import AddItems from "./AddItems";
 import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import CustomerNamesComplete from "./CustomerNamesComplete";
 
-export function RetailWholesaleToggle({billType="R", setBillType}) {
+export function RetailWholesaleToggle({ billType = "R", setBillType }) {
 
-  return (
-    <div className="flex items-center bg-gray-200/80 p-1 rounded-2xl w-fit">
-      {/* Retail Button */}
-      <button
-        onClick={() => setBillType('R')}
-        className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
-          ${
-            billType === 'R'
-              ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
-              : "text-gray-700"
-          }`}
-      >
-        Retail
-      </button>
+    return (
+        <div className="flex items-center bg-gray-200/80 p-1 rounded-2xl w-fit">
+            {/* Retail Button */}
+            <button
+                onClick={() => setBillType('R')}
+                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
+          ${billType === 'R'
+                        ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
+                        : "text-gray-700"
+                    }`}
+            >
+                Retail
+            </button>
 
-      {/* Wholesale Button */}
-      <button
-        onClick={() => setBillType('W')}
-        className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
-          ${
-            billType === 'W'
-              ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
-              : "text-gray-700"
-          }`}
-      >
-        Wholesale
-      </button>
-    </div>
-  );
+            {/* Wholesale Button */}
+            <button
+                onClick={() => setBillType('W')}
+                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
+          ${billType === 'W'
+                        ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
+                        : "text-gray-700"
+                    }`}
+            >
+                Wholesale
+            </button>
+        </div>
+    );
 }
 
 
@@ -78,7 +76,7 @@ export default function AddCustomers() {
                 headers: {
                     "content-type": "application/json"
                 },
-                body: JSON.stringify({...customer, billType})
+                body: JSON.stringify({ ...customer, billType })
             });
             const result = await response.json();
 
@@ -120,6 +118,25 @@ export default function AddCustomers() {
         }
 
     }
+
+    function formatIndianAmount(amount) {
+        if (!amount) return "";
+        return Number(amount).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+        });
+    }
+
+    const handleSilverRateChange = (e) => {
+        const rawValue = e.target.value.replace(/,/g, ""); // remove commas
+
+        if (!isNaN(rawValue)) {
+            setCustomer((prev) => ({
+                ...prev,
+                silverRate: rawValue,
+            }));
+        }
+    };
+
 
     useEffect(() => {
         const silverRate = localStorage.getItem('kamal_silver_rate') ?? 0;
@@ -167,7 +184,7 @@ export default function AddCustomers() {
                             </div>
                             <div className="flex flex-col">
                                 <label htmlFor="" className="text-sm font-medium text-gray-600">Silver Rate(Per kg):</label>
-                                <input type="number" onChange={(e) => setCustomer((prev) => ({ ...prev, silverRate: e.target.value }))} value={customer.silverRate} placeholder="Enter Silver rate" className="border border-gray-300 px-4 py-2 rounded-lg outline-none" />
+                                <input type="text" onChange={handleSilverRateChange} value={formatIndianAmount(customer.silverRate)} placeholder="Enter Silver rate" className="border border-gray-300 px-4 py-2 rounded-lg outline-none" />
                             </div>
                             <div className="flex flex-col">
                                 <label htmlFor="" className="text-sm font-medium text-gray-600">Address:</label>
