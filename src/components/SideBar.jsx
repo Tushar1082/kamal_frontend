@@ -18,12 +18,12 @@ export default function SideBar({ showLoader = false }) {
     }, []);
 
     return (
-        <div className="flex sticky top-0 w-[20%] bg-white h-[100vh] shadow-[0_0_14px_-2px_#d3d3d3]">
+        <div className="flex sticky top-0 bg-white h-[100vh] shadow-[0_0_14px_-2px_#d3d3d3]">
             {
                 activeTab ?
-                    <div className="items-left w-full p-8 pl-0 flex flex-col gap-4">
-                        <Link to="/" className={`${activeTab == "/" ? "text-white bg-[#6366F1]" : "text-black bg-white hover:bg-[#6366F1] hover:text-white"} flex items-center p-3 pl-8 px-6 cursor-pointer font-semibold rounded-[0px_30px_30px_0px] transition-background duration-300`}><UserPlus className="mr-3" /> Add Customer</Link>
-                        <Link to="/customerInvoices" className={`${activeTab == "/customerInvoices" ? "text-white bg-[#6366F1]" : "text-black bg-white hover:bg-[#6366F1] hover:text-white"} flex items-center p-3 pl-8 px-6 cursor-pointer font-semibold rounded-[0px_30px_30px_0px] transition-background duration-300`}> <Receipt className="mr-3"/> Customer Invoices</Link>
+                    <div className="items-left w-full p-8 pl-0 pr-4 flex flex-col gap-4">
+                        <Link to="/" className={`${activeTab == "/" ? "text-white bg-[#6366F1]" : "text-black bg-white hover:bg-[#6366F1] hover:text-white"} flex items-center p-3 pl-8 px-6 cursor-pointer whitespace-nowrap font-semibold rounded-[0px_30px_30px_0px] transition-background duration-300`}><UserPlus className="mr-3" /> Add Customer</Link>
+                        <Link to="/customerInvoices" className={`${activeTab == "/customerInvoices" ? "text-white bg-[#6366F1]" : "text-black bg-white hover:bg-[#6366F1] hover:text-white"} flex whitespace-nowrap items-center p-3 pl-8 px-6 cursor-pointer font-semibold rounded-[0px_30px_30px_0px] transition-background duration-300`}> <Receipt className="mr-3"/> Customer Invoices</Link>
                     </div> : <></>
             }
             {/* {showLoader ?  */}

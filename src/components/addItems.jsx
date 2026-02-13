@@ -6,8 +6,9 @@ import { Toaster, toast } from "react-hot-toast";
 import ItemAutocomplete from "./ItemAutocomplete";
 import PPColumn from "./PPColumn";
 import { WholeSalerBillPDF } from "./wholeSalerBillPDF";
+import { WholeSalerBillPDFA } from "./WholeSalerBillPDF_";
 
-export default function AddItems({ customer, billType, setShowLoader, handleAddCustomer }) {
+export default function AddItems({ customer, cusType, setShowLoader, handleAddCustomer }) {
     const [items, setItems] = useState([
         {
             itemIdx: null,
@@ -19,13 +20,18 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 { count: 0, weight: 0 }
             ],
             amount: "0",
-            newItems: true
+            newItems: true,
+            labourType: null,
+            labourNumPieces: 0,
+            labourRate: 0,
+            labourAmount: 0
         }
     ]);
 
     const [totalAmount, setTotalAmount] = useState("0");
     const [invoiceNo, setInvoiceNo] = useState(null);
     const [generatedInvoiceNo, setGeneratedInvoiceNo] = useState(null);
+    const [showBill, setShowBill] = useState(false);
     const lastRowRef = useRef(null);
 
     const stringFLCMaker = (str) => {
@@ -91,7 +97,11 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                     { count: 0, weight: 0 }
                 ],
                 amount: "0",
-                newItems: true
+                newItems: true,
+                labourType: null,
+                labourNumPieces: 0,
+                labourRate: 0,
+                labourAmount: 0
             }
         ]);
     };
@@ -115,7 +125,11 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                             { count: 0, weight: 0 }
                         ],
                         amount: "0",
-                        newItems: true
+                        newItems: true,
+                        labourType: null,
+                        labourNumPieces: 0,
+                        labourRate: 0,
+                        labourAmount: 0
                     }
                 ];
             }
@@ -125,23 +139,106 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
 
     }
 
+    // const validateAll = () => {
+    //     if (!customer.name) {
+    //         toast.error("Please Enter Customer Name..");
+    //         return false;
+    //     }
+
+    //     // Add new Customer
+    //     if (!customer.silverRate || parseInt(customer.silverRate) <= 0) {
+    //         toast.error("Please Enter Valid Sliver Rate..");
+    //         return false;
+    //     }
+
+    //     if (customer.phone) {
+    //         if (customer.phone.length != 10) {
+    //             toast.error("Phone Number Size Should be 10 Digits...");
+    //             return false;
+    //         }
+    //     }
+
+    //     for (let i = 0; i < items.length; i++) {
+    //         const item = items[i];
+    //         const row = i + 1;
+
+    //         // 1️⃣ Item name
+    //         if (!item.itemName?.trim()) {
+    //             toast.error(`Row ${row}: Item name is required`);
+    //             return false;
+    //         }
+
+    //         // 2️⃣ Rate validation
+    //         const hasRateGm = Number(item.rateGm) > 0;
+    //         const hasRatePer = Number(item.ratePer) > 0;
+
+    //         if (!hasRateGm && !hasRatePer) {
+    //             toast.error(`Row ${row}: Enter Rate / Gram OR Rate / %`);
+    //             return false;
+    //         }
+
+    //         // 3️⃣ Gross weight
+    //         if (!item.weight || Number(item.weight) <= 0) {
+    //             toast.error(`Row ${row}: Gross weight is required`);
+    //             return false;
+    //         }
+
+    //         // 4️⃣ PP rows validation
+    //         if (!Array.isArray(item.ppRows) || item.ppRows.length === 0) {
+    //             toast.error(`Row ${row}: At least one PP row is required`);
+    //             return false;
+    //         }
+
+    //         for (let j = 0; j < item.ppRows.length; j++) {
+    //             const pp = item.ppRows[j];
+    //             const ppRow = j + 1;
+
+    //             if (Number(pp.count) < 0) {
+    //                 toast.error(
+    //                     `Row ${row}, PP ${ppRow}: No of polythenes must be greater than 0`
+    //                 );
+    //                 return false;
+    //             }
+
+    //             if (Number(pp.weight) < 0) {
+    //                 toast.error(
+    //                     `Row ${row}, PP ${ppRow}: PP weight cannot be negative`
+    //                 );
+    //                 return false;
+    //             }
+    //         }
+
+    //         // 5️⃣ Net weight sanity check
+    //         // const totalPPWeight = item.ppRows.reduce(
+    //         //     (sum, pp) => sum + Number(pp.weight || 0),
+    //         //     0
+    //         // );
+
+    //         // if (totalPPWeight >= Number(item.weight)) {
+    //         //     toast.error(
+    //         //         `Row ${row}: Total PP weight cannot be greater than or equal to gross weight`
+    //         //     );
+    //         //     return false;
+    //         // }
+    //     }
+
+    //     return true;
+    // };
+
     const validateAll = () => {
-        if (!customer.name) {
+        if (!customer.name?.trim()) {
             toast.error("Please Enter Customer Name..");
             return false;
         }
 
-        // Add new Customer
-        if (!customer.silverRate || parseInt(customer.silverRate) <= 0) {
-            toast.error("Please Enter Valid Sliver Rate..");
+        if (!customer.silverRate || Number(customer.silverRate) <= 0) {
+            toast.error("Please Enter Valid Silver Rate..");
             return false;
         }
 
-        if (customer.phone) {
-            if (customer.phone.length != 10) {
-                toast.error("Phone Number Size Should be 10 Digits...");
-                return false;
-            }
+        if (customer.phone && customer.phone.length !== 10) {
+            toast.error("Phone Number Size Should be 10 Digits...");
+            return false;
         }
 
         for (let i = 0; i < items.length; i++) {
@@ -175,6 +272,8 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 return false;
             }
 
+            let ppW = 0;
+
             for (let j = 0; j < item.ppRows.length; j++) {
                 const pp = item.ppRows[j];
                 const ppRow = j + 1;
@@ -192,24 +291,41 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                     );
                     return false;
                 }
+
+                ppW += (Number(pp.count || 0) * Number(pp.weight || 0));
             }
 
-            // 5️⃣ Net weight sanity check
-            // const totalPPWeight = item.ppRows.reduce(
-            //     (sum, pp) => sum + Number(pp.weight || 0),
-            //     0
-            // );
+            // 5️⃣ Labour Validation (ONLY if customer type is W)
+            if (cusType === "W") {
 
-            // if (totalPPWeight >= Number(item.weight)) {
-            //     toast.error(
-            //         `Row ${row}: Total PP weight cannot be greater than or equal to gross weight`
-            //     );
-            //     return false;
-            // }
+                if (!item.labourType) {
+                    toast.error(`Row ${row}: Labour Type is required`);
+                    return false;
+                }
+
+                if (item.labourType === "P") {
+                    if (!item.labourNumPieces || Number(item.labourNumPieces) <= 0) {
+                        toast.error(`Row ${row}: Number of pieces is required`);
+                        return false;
+                    }
+                }
+
+                if (!item.labourRate || Number(item.labourRate) <= 0) {
+                    toast.error(`Row ${row}: Labour rate must be greater than 0`);
+                    return false;
+                }
+            }
+
+            if (Number(item.weight) - ppW < 0) {
+                toast.error(`Row ${row}: Net Weight cannot be negative`);
+                return false;
+            }
+
         }
 
         return true;
     };
+
 
     const transformItemsForBackend = (items) =>
         items.map(item => {
@@ -224,6 +340,19 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 (sum, p) => sum + (p.noOfPPs * p.weight),
                 0
             );
+            const netWeight = Math.max(0, item.weight - getTotalPPWeight(item.ppRows));
+
+            let labAmount = 0;
+
+            if (cusType == 'W') {
+                if (item.labourType == 'P') {
+                    labAmount = (item.labourRate) * item.labourNumPieces;
+                } else if (item.labourType == 'K') {
+                    labAmount = (item.labourRate / 1000) * netWeight
+                } else
+                    labAmount = item.labourRate * netWeight
+
+            }
 
             return {
                 itemName: item.itemName,
@@ -231,7 +360,10 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                 ratePer: item.ratePer || null,
                 grossWeight: item.weight,
                 netWeight: item.weight - totalPP,
-                polythenes
+                polythenes,
+                labourType: item.labourType,
+                labourRate: item.labourRate,
+                labourAmount: labAmount
             };
         });
 
@@ -239,11 +371,15 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
 
     const previewBill = async () => {
         try {
-            setShowLoader(true);
+            // generateBill();
+            // return;
             if (!validateAll()) return;
-
+            setShowLoader(true);
             // ADD ITEMS
             const newIArr = transformItemsForBackend(items);
+
+            // console.log(newIArr);
+            // return;
 
             const cusId = await handleAddCustomer();
 
@@ -252,15 +388,15 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             }
 
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/customer-items/add`,
+                `${import.meta.env.VITE_API_URL}/invoice-items/add`,
                 {
                     method: 'POST',
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({
                         Items: newIArr,
                         CusId: cusId,
-                        BillType: billType,
-                        InvoiceNo: invoiceNo
+                        InvoiceNo: invoiceNo,
+                        CusType: cusType
                     })
                 }
             );
@@ -285,12 +421,6 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
     };
 
     async function generateBill() {
-        const blob = await pdf(
-            billType == 'R' ? <BillPDF items={items} silverRate={customer.silverRate} /> : <WholeSalerBillPDF items={items} silverRate={customer.silverRate} />
-        ).toBlob();
-
-        window.open(URL.createObjectURL(blob));
-
         let total = 0;
 
         const updatedItems = items.map(item => {
@@ -305,16 +435,48 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             }
 
             total += amount;
+            let labAmount = 0;
+
+            if (cusType == 'W') {
+                if (item.labourType == 'P') {
+                    labAmount = (item.labourRate) * item.labourNumPieces;
+                } else if (item.labourType == 'K') {
+                    labAmount = (item.labourRate / 1000) * netWeight
+                } else
+                    labAmount = item.labourRate * netWeight
+
+            }
 
             return {
                 ...item,
-                amount // keep as number
+                amount, // keep as number
+                labourAmount: labAmount
             };
         });
 
         setItems(updatedItems);
         setTotalAmount(total);
+
+        setShowBill(true);
     }
+
+    useEffect(() => {
+        if (!showBill) return;
+
+        const generatePDF = async () => {
+            const blob = await pdf(
+                cusType === "R"
+                    ? <BillPDF items={items} silverRate={customer.silverRate} />
+                    : <WholeSalerBillPDFA items={items} silverRate={customer.silverRate} />
+            ).toBlob();
+
+            window.open(URL.createObjectURL(blob));
+            setShowBill(false);
+        };
+
+        generatePDF();
+    }, [showBill]);
+
 
     function formatName(fullName) {
         if (!fullName) return "";
@@ -356,7 +518,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
             })
             .replace(":", "-");
 
-        const finalInvoiceNo = `${invoiceNo}-${formatName(name??"customer")}-${amount}-${date}-${time}`;
+        const finalInvoiceNo = `${invoiceNo}-${formatName(name ?? "customer")}-${amount}-${date}-${time}`;
 
         setGeneratedInvoiceNo(finalInvoiceNo);
 
@@ -374,7 +536,25 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
     useEffect(() => {
         setGeneratedInvoiceNo(null);
         setInvoiceNo(null);
-    }, [billType])
+        setItems([
+            {
+                itemIdx: null,
+                itemName: '',
+                rateGm: 0,
+                ratePer: 0,
+                weight: 0, // gross weight
+                ppRows: [
+                    { count: 0, weight: 0 }
+                ],
+                amount: "0",
+                newItems: true,
+                labourType: null,
+                labourNumPieces: 0,
+                labourRate: 0,
+                labourAmount: 0
+            }
+        ]);
+    }, [cusType])
 
     return (
         <div className="flex">
@@ -409,18 +589,22 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                         </div>
                     </div>
                     <div className="px-4 pt-2 pb-2">
-                        <table className="border-separate border-spacing-4">
+                        <table className="border-separate border-spacing-2">
                             <thead>
-                                <tr>
-                                    <th className="text-left font-semibold">ITEM NAME</th>
-                                    <th className="text-left font-semibold">RATE / GRAM</th>
+                                <tr className="text-sm">
+                                    <th className="text-left font-semibold">NAME</th>
+                                    <th className="text-left font-semibold whitespace-nowrap">RATE / GRAM</th>
                                     <th className="text-left font-semibold">RATE %</th>
-                                    <th className="text-left font-semibold">GROSS WEIGHT (g)</th>
-                                    <th className="text-left font-semibold">PP(QTY | WEIGHT)</th>
-                                    <th className="text-left font-semibold">AMOUNT</th>
+                                    <th className="text-left font-semibold">GR. WT(g)</th>
+                                    {cusType == 'W' ? <th className="text-left font-semibold">LBR TYPE</th> : ""}
+                                    {cusType == 'W' ? <th className="text-left font-semibold">LBR RATE</th> : ""}
+                                    <th className="text-left font-semibold">PP(QTY | WT)</th>
+                                    {cusType == 'W' ? <th className="text-left font-semibold whitespace-nowrap">LBR AMT.</th> : ""}
+                                    <th className="text-left font-semibold">AMT.</th>
                                     <th className="text-center font-semibold">ACTION</th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 {items
                                     .map((item, idx) => (
@@ -433,6 +617,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                                                         handleInputChange(idx, "itemName", val)
                                                     }
                                                     setItems={setItems}
+                                                    cusType={cusType}
                                                 />
                                             </td>
                                             <td>
@@ -455,7 +640,7 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                                                         handleInputChange(idx, "ratePer", parseFloat(e.target.value))
                                                     }
                                                     disabled={item.rateGm > 0 ? true : false}
-                                                    className={`border border-gray-300 w-full px-4 py-2 rounded-lg outline-none ${item.rateGm > 0 ? 'bg-[#d3d3d39e]' : ''}`}
+                                                    className={`border w-full border-gray-300 px-4 py-2 rounded-lg outline-none ${item.rateGm > 0 ? 'bg-[#d3d3d39e]' : ''}`}
                                                     placeholder="Rate (%)"
                                                 />
                                             </td>
@@ -470,6 +655,49 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                                                     placeholder="Gross Weight"
                                                 />
                                             </td>
+                                            {cusType == 'W' ? <><td>
+                                                <div className="flex border border-gray-300 rounded-lg">
+                                                    <select
+                                                        value={item.labourType || ""}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+
+                                                            handleInputChange(idx, "labourType", value);
+                                                        }}
+                                                        className={`w-full px-4 text-sm py-2 rounded-lg outline-none`}
+                                                    >
+                                                        <option value="" className="text-sm">Select Type</option>
+                                                        <option value="P" className="text-sm">Pieces</option>
+                                                        <option value="K" className="text-sm">Kilo</option>
+                                                        <option value="G" className="text-sm">Gram</option>
+                                                    </select>
+
+                                                    {item.labourType == 'P' &&
+                                                        <input
+                                                            type="number"
+                                                            value={item.labourNumPieces}
+                                                            onChange={(e) =>
+                                                                handleInputChange(idx, "labourNumPieces", parseFloat(e.target.value))
+                                                            }
+                                                            className="border-l w-full border-gray-300 px-4 py-2 rounded-tr-lg rounded-br-lg outline-none"
+                                                            placeholder="No. of pieces"
+                                                        />
+                                                    }
+                                                </div>
+                                            </td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        value={item.labourRate}
+                                                        onChange={(e) =>
+                                                            handleInputChange(idx, "labourRate", parseFloat(e.target.value))
+                                                        }
+                                                        className="border w-full border-gray-300 px-4 py-2 rounded-lg outline-none"
+                                                        placeholder="Labour Rate"
+                                                    />
+                                                </td>
+                                            </> : ""}
+
                                             <td>
                                                 <PPColumn
                                                     itemIndex={idx}
@@ -477,7 +705,11 @@ export default function AddItems({ customer, billType, setShowLoader, handleAddC
                                                     setItems={setItems}
                                                 />
                                             </td>
-                                            <td className="w-fit whitespace-nowrap font-semibold">
+                                            {cusType == 'W' ?
+                                                <td className="pr-4 whitespace-nowrap font-semibold">
+                                                    Rs. {formatIndianAmount(item.labourAmount)}
+                                                </td> : <></>}
+                                            <td className="pr-4 whitespace-nowrap font-semibold">
                                                 Rs. {formatIndianAmount(item.amount)}
                                             </td>
                                             <td className="text-center flex items-center gap-2">

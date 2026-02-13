@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ChevronDown, ChevronRight, Search, Calendar, Download, Plus, Edit, X, RotateCcw } from 'lucide-react';
 import toast from "react-hot-toast";
 import ViewInvoices from "./ViewInvoices";
+import CustomerTypeDropdown from "./CustomerTypeDropdown";
 
 const CustomerDirectory = () => {
     const [expandedCustomers, setExpandedCustomers] = useState(new Set());
@@ -19,11 +20,13 @@ const CustomerDirectory = () => {
     const [silverRate, setSilverRate] = useState(null);
     const [showInvoice, setShowInvoice] = useState({
         show: false,
-        billType: 'R',
+        cusType: 'R',
         invId: null,
         cusId: null,
         invoiceNo: null
     });
+    const [cusFilter, setCusFilter] = useState(null);
+    const [isInvUpdate, setIsInvUpdate] = useState(false);
     const datePickerRef = useRef(null);
 
     const itemsPerPage = 10;
@@ -131,7 +134,7 @@ const CustomerDirectory = () => {
             }
             setShowLoader(true);
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/customer-items?cus_id=${cus_id}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/invoice-items?cus_id=${cus_id}`);
             const result = await response.json();
             // console.log(result);
 
@@ -327,7 +330,12 @@ const CustomerDirectory = () => {
 
     useEffect(() => {
         setFilteredCustomers(allCustomers);
-        setCurrentPage(1);
+        
+        if(!isInvUpdate){
+            setCurrentPage(1);
+        }else 
+            setIsInvUpdate(false);
+
     }, [allCustomers]);
 
 
@@ -355,13 +363,24 @@ const CustomerDirectory = () => {
         setExpandedCustomers(new Set());
     }, [currentPage]);
 
-    function handleCusInvoice(invoiceNum, invId, billType, cusId) {
-        if (!invoiceNum || !invId || !cusId || !billType) {
+    function handleCusInvoice(invoiceNum, invId, cusType, cusId) {
+        if (!invoiceNum || !invId || !cusId || !cusType) {
             return;
         }
 
-        setShowInvoice({ show: true, billType: billType, invoiceNo: invoiceNum, invId: invId, cusId });
+        setShowInvoice({ show: true, cusType: cusType, invoiceNo: invoiceNum, invId: invId, cusId });
     }
+
+    useEffect(()=>{
+        if(cusFilter){
+            if(cusFilter != 'R' && cusFilter != 'W'){
+                return;
+            }
+            const updatedData = allCustomers.filter((cus)=>cus.cusType == cusFilter);
+            setFilteredCustomers(updatedData);
+            setCurrentPage(1);
+        }
+    },[cusFilter]);
 
     return (
         <div className="flex gap-4">
@@ -371,13 +390,12 @@ const CustomerDirectory = () => {
                     invoiceNum={showInvoice.invoiceNo} 
                     invoiceId={showInvoice.invId} 
                     customerId={showInvoice.cusId} 
-                    BillType={showInvoice.billType} 
+                    cusType={showInvoice.cusType} 
                     silverRate={silverRate} 
                     setShowLoader={setShowLoader} 
                     setShowInvoice={setShowInvoice} 
                     setAllCustomers={setAllCustomers} 
-                    currentPage={currentPage} 
-                    setCurrentPage={setCurrentPage} 
+                    setIsInvUpdate={setIsInvUpdate}
                 />
             }
             
@@ -393,10 +411,10 @@ const CustomerDirectory = () => {
                         {/* Controls */}
                         <div className="bg-white rounded-lg shadow-[0_0_14px_-2px_#d3d3d3] mb-8 p-3 sm:p-4">
                             <div className="flex flex-col items-center sm:flex-row gap-3">
-                                <div className="relative w-fit">
+                                <div className="relative w-fit ">
                                     <button
                                         onClick={() => setShowDatePicker(!showDatePicker)}
-                                        className="flex items-center gap-2 px-3 bg-white sm:px-4 py-3.5 border border-gray-300 rounded-lg hover:bg-gray-50 w-full sm:w-auto text-sm"
+                                        className="flex items-center focus:outline-none focus:ring-2 focus:ring-indigo-500 gap-2 px-3 bg-white sm:px-4 py-3.5 border border-gray-300 rounded-lg hover:bg-gray-50 w-full sm:w-auto text-sm"
                                     >
                                         <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                         <span className="text-gray-700 whitespace-nowrap">
@@ -439,6 +457,7 @@ const CustomerDirectory = () => {
                                         </div>
                                     )}
                                 </div>
+                                <CustomerTypeDropdown cusFilter={cusFilter} setCusFilter={setCusFilter}/>
                                 {/* Search */}
                                 <div className="flex-1 relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-6 sm:h-6" />
@@ -456,7 +475,7 @@ const CustomerDirectory = () => {
                                     <Search className="w-5 h-5" />
                                     Search
                                 </button>
-                                <button onClick={() => { setFilteredCustomers(allCustomers); setSearchQuery(""); }} className="bg-black/80 hover:bg-black/90 cursor-pointer transition-background duration-500 text-white pl-5 pr-8 py-3 font-medium flex items-center gap-3 rounded-lg text-md w-fit">
+                                <button onClick={() => { setFilteredCustomers(allCustomers); setSearchQuery(""); setCusFilter(null) }} className="bg-black/80 hover:bg-black/90 cursor-pointer transition-background duration-500 text-white pl-5 pr-8 py-3 font-medium flex items-center gap-3 rounded-lg text-md w-fit">
                                     <RotateCcw className="w-5 h-5" />
                                     Reset
                                 </button>
@@ -502,11 +521,12 @@ const CustomerDirectory = () => {
                         {/* Table */}
                         <div className="bg-white rounded-lg clear-both shadow-[0_0_14px_-2px_#d3d3d3] overflow-hidden">
                             {/* Table Header */}
-                            <div className="hidden lg:grid grid-cols-4 gap-4 px-4 py-[1.3rem] bg-gray-50 border-b border-gray-200 font-semibold text-gray-600 uppercase tracking-wider">
-                                <div className="text-start ml-8">Customer Name</div>
-                                <div className="text-start">Contact Details</div>
-                                <div className="text-start">Last Purchase</div>
-                                <div className="text-start">Total Spent</div>
+                            <div className="grid grid-cols-5 gap-4 px-4 py-[1.3rem] bg-gray-50 border-b border-gray-200 font-semibold text-gray-600 uppercase tracking-wider">
+                                <div className="text-start ml-8 col-span-1">Customer Name</div>
+                                <div className="text-center">Type</div>
+                                <div className="text-center">Contact Details</div>
+                                <div className="text-center ml-1">Last Purchase</div>
+                                <div className="text-start ml-1">Total Spent</div>
                             </div>
 
                             {/* Table Body */}
@@ -519,8 +539,8 @@ const CustomerDirectory = () => {
                                             className="cursor-pointer hover:bg-gray-50 transition-colors duration-150"
                                         >
                                             {/* Desktop View */}
-                                            <div className="hidden lg:grid grid-cols-4 gap-4 px-4 py-4 items-center">
-                                                <div className="flex items-center gap-3">
+                                            <div className="hidden lg:grid grid-cols-5 gap-4 px-4 py-4 items-center">
+                                                <div className="flex items-center gap-3 col-span-1">
                                                     <div className="text-gray-400 transition-transform duration-200">
                                                         {expandedCustomers.has(customer.cusId) ? (
                                                             <ChevronDown className="w-5 h-5" />
@@ -533,11 +553,12 @@ const CustomerDirectory = () => {
                                                         {/* <div className="text-xs text-gray-500">ID: {customer.cusId}</div> */}
                                                     </div>
                                                 </div>
-                                                <div className="">
+                                                <div className="text-sm text-center text-gray-900">{customer.cusType=='R'?'Retail':'WholeSale'}</div>
+                                                <div className="text-center">
                                                     <div className="text-sm text-gray-900">{customer.phone}</div>
                                                     <div className="text-xs text-gray-500 truncate">{stringFLCMaker(customer.city)}</div>
                                                 </div>
-                                                <div className="text-sm text-gray-900">{customer.lastPurchase}</div>
+                                                <div className="text-sm text-center text-gray-900">{customer.lastPurchase}</div>
                                                 <div className="text-base font-bold text-[#6366F1]">{formatCurrency(customer.totalSpent)}</div>
                                                 {/* <div className="col-span-2 flex justify-end">
                                                     <button
@@ -575,7 +596,6 @@ const CustomerDirectory = () => {
                                                             <thead className="bg-gray-200/90 border-b border-gray-300">
                                                                 <tr>
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Invoice ID</th>
-                                                                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Bill Type</th>
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
                                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Net Weight (g)</th>
                                                                     <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Amount</th>
@@ -584,10 +604,9 @@ const CustomerDirectory = () => {
                                                             <tbody className="divide-y divide-gray-100">
                                                                 {customer.invoices.map((invoice) => (
                                                                     <tr key={invoice.id} className="hover:bg-gray-100 cursor-pointer transition-colors">
-                                                                        <td className="px-6 py-4" onClick={() => handleCusInvoice(invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate), invoice.id, invoice.billType, customer.cusId)}>
+                                                                        <td className="px-6 py-4" onClick={() => handleCusInvoice(invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate), invoice.id, customer.cusType, customer.cusId)}>
                                                                             <span className="font-semibold text-[#6366F1]">#{invoiceMaker(invoice.id, customer.name, invoice.totalAmount, invoice.invoiceDate)}</span>
                                                                         </td>
-                                                                        <td className="px-6 py-4 text-gray-700">{invoice.billType == 'R' ? 'Retail' : 'WholeSale'}</td>
                                                                         <td className="px-6 py-4 text-gray-700">{formatDate(invoice.invoiceDate)}</td>
                                                                         <td className="px-6 py-4 text-gray-700">{invoice.netWeight}g</td>
                                                                         <td className="px-6 py-4 text-right font-bold text-gray-900">{formatCurrency(invoice.totalAmount)}</td>

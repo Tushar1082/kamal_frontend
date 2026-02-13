@@ -1,7 +1,7 @@
 import { Combobox } from "@headlessui/react";
 import { useState } from "react";
 
-export default function CustomerNamesComplete({ value, setCustomer }) {
+export default function CustomerNamesComplete({ value, setCustomer, setCusType, setIsOldCus, cusType }) {
     const [fetchItems, setFetchItems] = useState([]);
 
     const fetchSuggestions = async (q) => {
@@ -11,7 +11,7 @@ export default function CustomerNamesComplete({ value, setCustomer }) {
         }
 
         const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/customer/search?q=${encodeURIComponent(q)}`
+            `${import.meta.env.VITE_API_URL}/customer/search?q=${encodeURIComponent(q)}&&cusType=${cusType}`
         );
         const data = await res.json();
 
@@ -22,7 +22,7 @@ export default function CustomerNamesComplete({ value, setCustomer }) {
 
     const fetchCustomer = async (name) => {
         const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/customer/details?name=${encodeURIComponent(name)}`
+            `${import.meta.env.VITE_API_URL}/customer/details?name=${encodeURIComponent(name)}&&cusType=${cusType}`
         );
         const result = await res.json();
 
@@ -37,6 +37,8 @@ export default function CustomerNamesComplete({ value, setCustomer }) {
                 address: c.address,
                 city: c.city
             }));
+            setCusType(c.type??'R');
+            setIsOldCus(true);
         } else {
             // customer not found → keep typed name, clear rest
             setCustomer(prev => ({

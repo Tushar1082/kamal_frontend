@@ -1,7 +1,7 @@
 import { Combobox } from "@headlessui/react";
 import { useState } from "react";
 
-export default function ItemAutocomplete({ value, onChange, onSelect, idx, setItems }) {
+export default function ItemAutocomplete({ value, onChange, onSelect, idx, setItems, cusType }) {
     const [query, setQuery] = useState("");
     const [fetchItems, setFetchItems] = useState([]);
 
@@ -12,7 +12,7 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
         }
 
         const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/customer-items/search?q=${encodeURIComponent(q)}`
+            `${import.meta.env.VITE_API_URL}/invoice-items/search?q=${encodeURIComponent(q)}&&cusType=${cusType}`
         );
         const data = await res.json();
 
@@ -23,7 +23,7 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
 
     const fetchRate = async (itemName) => {
         const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/customer-items/fetch-rate?item_name=${encodeURIComponent(itemName)}`
+            `${import.meta.env.VITE_API_URL}/invoice-items/fetch-rate?item_name=${encodeURIComponent(itemName)}&&cusType=${cusType}`
         );
         const data = await res.json();
 
@@ -65,7 +65,7 @@ export default function ItemAutocomplete({ value, onChange, onSelect, idx, setIt
             <div className="relative">
                 <Combobox.Input
                     autoComplete="off"
-                    className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="min-w-52 border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Item"
                     value={value}
                     onChange={(e) => {

@@ -1,3 +1,4 @@
+import React from "react";
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 
 // Register font globally
@@ -210,6 +211,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         fontSize: 7,
         lineHeight: 1.4,
+        flexShrink: 0
     },
 
     rateBox: {
@@ -234,14 +236,14 @@ const styles = StyleSheet.create({
     },
 
     silverRateLabel: {
-        fontSize: 6,
+        fontSize: 7,
         fontWeight: "500",
         marginBottom: 1,
         textAlign: "center",      // ⬅️ important
     },
 
     silverRateValue: {
-        fontSize: 6,
+        fontSize: 7,
         fontWeight: "400",
         textAlign: "center",      // ⬅️ important
     },
@@ -251,7 +253,8 @@ const styles = StyleSheet.create({
     },
 
     amountBox: {
-        flex: 1,
+        // flex:1,
+        width: 42, 
         alignItems: "flex-end",
         justifyContent: "center",
     },
@@ -274,6 +277,11 @@ const styles = StyleSheet.create({
 
     totalText: {
         fontSize: 7,
+    },
+
+    fineTotalText: {
+        fontSize: 7,
+        marginBottom: 0.5
     },
 
     netAmount: {
@@ -323,7 +331,9 @@ const styles = StyleSheet.create({
     },
 
     itemLeft: {
-        flex: 1
+        // flexGrow: 0,
+        // flexShrink: 0,
+        flex: 1.5
     },
 
     // itemName: {
@@ -410,8 +420,8 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
 
         const net = Math.max(0, gross - ppTotal);
 
-        return item.ratePer ? net * (item.ratePer / 100) : 0;
-    }, 0);
+        return sum + (item.ratePer ? net * (item.ratePer / 100) : 0);
+    }, 0) / SCALE;
 
     const totalWeight = items.reduce((sum, item) => {
         const gross = Math.round(Number(item.weight || 0) * SCALE);
@@ -421,6 +431,12 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
 
         return sum + net;
     }, 0) / SCALE;
+
+    const hasValidPpRows = (item) => {
+        return item?.ppRows?.some(
+            (elm) => elm.count > 0 && elm.weight > 0
+        ) || false;
+    };
 
 
     return (
@@ -478,6 +494,8 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
                                     const net = gross - totalPP;
                                     const amount = calculateAmount(item, silverRate);
 
+                                    console.log(item);
+
                                     return (
                                         <View key={idx} style={styles.itemBlock}>
                                             <View style={styles.itemTopRow}>
@@ -488,35 +506,42 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
                                                         {stringFLCMaker(item.itemName)}
                                                     </Text>
 
-                                                    <Text style={styles.itemDetails}>
-                                                        Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
+                                                    <Text style={styles.weightText} wrap={false}>
+                                                        {/* Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g */}
+                                                        {`Gr Wt. ${formatNoRound(gross)}g, Nt Wt. ${formatNoRound(net)}g`}
                                                     </Text>
 
-                                                    {item?.ppRows &&
-                                                        item.ppRows
-                                                            .filter((elm) => elm.count > 0 && elm.weight > 0)
-                                                            .map((ppElm, i) => (
-                                                                <Text key={i} style={styles.itemDetails}>
-                                                                    PP {ppElm.weight} x {ppElm.count}
-                                                                </Text>
-                                                            ))}
+                                                    {hasValidPpRows(item) && (
+                                                        <Text style={styles.weightText}>
+                                                            P -{" "}
+                                                            {item.ppRows
+                                                                .filter((elm) => elm.count > 0 && elm.weight > 0)
+                                                                .map((ppElm, idx, arr) => (
+                                                                    <React.Fragment key={idx}>
+                                                                        {ppElm.weight} x {ppElm.count}
+                                                                        {idx !== arr.length - 1 ? ", " : ""}
+                                                                    </React.Fragment>
+                                                                ))}
+                                                        </Text>
+                                                    )}
+
                                                 </View>
 
                                                 {/* CENTER RATE */}
-                                                <View style={styles.itemRateBlock}>
-                                                    <Text style={styles.rateLabel}>RATE</Text>
-                                                    <Text style={styles.rateValue}>
+                                                <View style={styles.rateBox}>
+                                                    <Text>RATE</Text>
+                                                    <Text>
                                                         {item.rateGm
                                                             ? `${formatNoRound(item.rateGm)}/g`
-                                                            : `${formatIndianAmount(silverRate)}/kg`}
+                                                            : `T${item.ratePer}`}
                                                     </Text>
                                                 </View>
 
                                                 {/* CENTER Labour */}
-                                                <View style={styles.itemRateBlock}>
-                                                    <Text style={styles.rateLabel}>FINE</Text>
-                                                    <Text style={styles.rateValue}>
-                                                        0
+                                                <View style={styles.rateBox}>
+                                                    <Text>FINE</Text>
+                                                    <Text>
+                                                        {formatNoRound(net * (item.ratePer / 100))}g
                                                         {/* {item.rateGm
                                                             ? `${formatNoRound(item.rateGm)}/g`
                                                             : `${formatIndianAmount(silverRate)}/kg`} */}
@@ -524,10 +549,21 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
                                                 </View>
 
                                                 {/* CENTER Labour */}
-                                                <View style={styles.itemRateBlock}>
-                                                    <Text style={styles.rateLabel}>LABOUR</Text>
-                                                    <Text style={styles.rateValue}>
-                                                        0
+                                                <View style={styles.rateBox}>
+                                                    <Text>LBR. RATE</Text>
+                                                    <Text>
+                                                        ₹{formatIndianAmount(item.labourRate)}{item.labourType == 'G' && '/g'}{item.labourType == 'K' && '/kg'}
+                                                        {/* {item.rateGm
+                                                            ? `${formatNoRound(item.rateGm)}/g`
+                                                            : `${formatIndianAmount(silverRate)}/kg`} */}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.rateBox}>
+                                                    <Text>LBR. AMT.</Text>
+                                                    <Text>
+                                                        {rupee}
+                                                        {formatIndianAmount(item.labourAmount)}{item.labourNumPieces > 0 && "(" + item.labourNumPieces + " pcs.)"}
                                                         {/* {item.rateGm
                                                             ? `${formatNoRound(item.rateGm)}/g`
                                                             : `${formatIndianAmount(silverRate)}/kg`} */}
@@ -535,9 +571,10 @@ export const WholeSalerBillPDFA = ({ items, silverRate }) => {
                                                 </View>
 
                                                 {/* RIGHT AMOUNT */}
-                                                <View style={styles.itemAmount}>
+                                                <View style={styles.amountBox}>
                                                     <Text style={styles.amountText}>
-                                                        ₹{formatIndianAmount(amount)}
+                                                        {rupee}
+                                                        {formatIndianAmount(amount)}
                                                     </Text>
                                                 </View>
 

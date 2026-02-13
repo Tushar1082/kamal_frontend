@@ -1,3 +1,4 @@
+import React from "react";
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 
 // Register font globally
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
     },
 
     weightText: {
-        flexDirection:'row',
+        flexDirection: 'row',
         fontSize: 7,
         lineHeight: 1.4,
     },
@@ -234,19 +235,19 @@ const styles = StyleSheet.create({
     },
 
     silverRateLabel: {
-        fontSize: 6,
+        fontSize: 7,
         fontWeight: "500",
         marginBottom: 1,
         textAlign: "center",      // ⬅️ important
     },
 
     silverRateValue: {
-        fontSize: 6,
+        fontSize: 7,
         fontWeight: "400",
         textAlign: "center",      // ⬅️ important
     },
 
-    NameWtBox:{
+    NameWtBox: {
         flex: 1
     },
 
@@ -330,6 +331,13 @@ export const BillPDF = ({ items, silverRate }) => {
         return sum + net;
     }, 0) / SCALE;
 
+    const hasValidPpRows = (item) => {
+        return item?.ppRows?.some(
+            (elm) => elm.count > 0 && elm.weight > 0
+        ) || false;
+    };
+
+
 
     return (
         <Document>
@@ -393,20 +401,24 @@ export const BillPDF = ({ items, silverRate }) => {
                                             <View style={styles.NameWtBox}>
                                                 <Text style={styles.itemName}>{stringFLCMaker(item.itemName)}</Text>
                                                 <View style={styles.weightBox}>
-                                                    {/* {totalPP > 0 ? */}
                                                     <>
                                                         <Text style={styles.weightText} wrap={false}>
                                                             Gr Wt. {formatNoRound(gross)}g, Nt Wt. {formatNoRound(net)}g
                                                         </Text>
-                                                        {item?.ppRows && item.ppRows.length > 0 ?
-                                                            item.ppRows
-                                                            .filter((elm)=> elm.count>0 && elm.weight>0)
-                                                            .map((ppElm) => (
-                                                                <Text style={styles.weightText}>
-                                                                    PP {ppElm.weight} x {ppElm.count}
-                                                                </Text>
-                                                            )) : ""
-                                                        }
+                                                        {hasValidPpRows(item) && (
+                                                            <Text style={styles.weightText}>
+                                                                P -{" "}
+                                                                {item.ppRows
+                                                                    .filter((elm) => elm.count > 0 && elm.weight > 0)
+                                                                    .map((ppElm, idx, arr) => (
+                                                                        <React.Fragment key={idx}>
+                                                                            {ppElm.weight} x {ppElm.count}
+                                                                            {idx !== arr.length - 1 ? ", " : ""}
+                                                                        </React.Fragment>
+                                                                    ))}
+                                                            </Text>
+                                                        )}
+
                                                     </>
                                                 </View>
                                             </View>

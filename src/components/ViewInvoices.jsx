@@ -9,7 +9,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { WholeSalerBillPDF } from "./wholeSalerBillPDF";
 import { WholeSalerBillPDFA } from "./WholeSalerBillPDF_";
 
-export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillType, silverRate, setShowLoader, setShowInvoice, setAllCustomers, currentPage, setCurrentPage }) {
+export default function ViewInvoices({ invoiceNum, invoiceId, customerId, cusType, silverRate, setShowLoader, setShowInvoice, setAllCustomers, setIsInvUpdate }) {
     const [items, setItems] = useState([
         {
             itemIdx: null,
@@ -21,13 +21,18 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 { count: 0, weight: 0 }
             ],
             amount: "0",
-            newItems: true
+            newItems: true,
+            labourType: null,
+            labourNumPieces: 0,
+            labourRate: 0,
+            labourAmount: 0
         }
     ]);
 
     const [totalAmount, setTotalAmount] = useState("0");
     const [open, setOpen] = useState(false);
     const [isAddingRow, setIsAddingRow] = useState(false);
+    const [showPdf, setShowPdf] = useState(false);
     const lastRowRef = useRef(null);
 
     const stringFLCMaker = (str) => {
@@ -112,7 +117,11 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                     { count: 0, weight: 0 }
                 ],
                 amount: "0",
-                newItems: true
+                newItems: true,
+                labourType: null,
+                labourNumPieces: 0,
+                labourRate: 0,
+                labourAmount: 0
             }
         ]);
 
@@ -147,7 +156,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             // }
             // let totalAm = 0;
 
-            if(items.length === 1){
+            if (items.length === 1) {
                 setOpen(true);
                 return;
             }
@@ -175,7 +184,11 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                                 { count: 0, weight: 0 }
                             ],
                             amount: "0",
-                            newItems: true
+                            newItems: true,
+                            labourType: null,
+                            labourNumPieces: 0,
+                            labourRate: 0,
+                            labourAmount: 0
                         }
                     ];
                 }
@@ -224,7 +237,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             const delRes = await fetch(
                 `${import.meta.env.VITE_API_URL}/customer-invoice/delete?invoiceId=${invoiceId}`,
                 {
-                    method:"DELETE"
+                    method: "DELETE"
                 }
             );
 
@@ -237,9 +250,9 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             }
             toast.success(delResult.message);
             setOpen(false);
-            setTimeout(()=>{
+            setTimeout(() => {
                 window.location.reload();
-            },1000);
+            }, 1000);
         } catch (error) {
             console.error(error);
             toast.error('Something Went Wrong, Try again later!');
@@ -249,8 +262,81 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
         }
     }
 
+    // const validateAll = () => {
+    //     // Add new Customer
+    //     if (!silverRate || parseInt(silverRate) <= 0) {
+    //         toast.error("Please Provide Valid Sliver Rate..");
+    //         return false;
+    //     }
+
+    //     for (let i = 0; i < items.length; i++) {
+    //         const item = items[i];
+    //         const row = i + 1;
+
+    //         // 1️⃣ Item name
+    //         if (!item.itemName?.trim()) {
+    //             toast.error(`Row ${row}: Item name is required`);
+    //             return false;
+    //         }
+
+    //         // 2️⃣ Rate validation
+    //         const hasRateGm = Number(item.rateGm) > 0;
+    //         const hasRatePer = Number(item.ratePer) > 0;
+
+    //         if (!hasRateGm && !hasRatePer) {
+    //             toast.error(`Row ${row}: Enter Rate / Gram OR Rate / %`);
+    //             return false;
+    //         }
+
+    //         // 3️⃣ Gross weight
+    //         if (!item.weight || Number(item.weight) <= 0) {
+    //             toast.error(`Row ${row}: Gross weight is required`);
+    //             return false;
+    //         }
+
+    //         // 4️⃣ PP rows validation
+    //         if (!Array.isArray(item.ppRows) || item.ppRows.length === 0) {
+    //             toast.error(`Row ${row}: At least one PP row is required`);
+    //             return false;
+    //         }
+
+    //         for (let j = 0; j < item.ppRows.length; j++) {
+    //             const pp = item.ppRows[j];
+    //             const ppRow = j + 1;
+
+    //             if (Number(pp.count) < 0) {
+    //                 toast.error(
+    //                     `Row ${row}, PP ${ppRow}: No of polythenes must be greater than 0`
+    //                 );
+    //                 return false;
+    //             }
+
+    //             if (Number(pp.weight) < 0) {
+    //                 toast.error(
+    //                     `Row ${row}, PP ${ppRow}: PP weight cannot be negative`
+    //                 );
+    //                 return false;
+    //             }
+    //         }
+
+    //         // 5️⃣ Net weight sanity check
+    //         // const totalPPWeight = item.ppRows.reduce(
+    //         //     (sum, pp) => sum + Number(pp.weight || 0),
+    //         //     0
+    //         // );
+
+    //         // if (totalPPWeight >= Number(item.weight)) {
+    //         //     toast.error(
+    //         //         `Row ${row}: Total PP weight cannot be greater than or equal to gross weight`
+    //         //     );
+    //         //     return false;
+    //         // }
+    //     }
+
+    //     return true;
+    // };
+
     const validateAll = () => {
-        // Add new Customer
         if (!silverRate || parseInt(silverRate) <= 0) {
             toast.error("Please Provide Valid Sliver Rate..");
             return false;
@@ -286,6 +372,7 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 toast.error(`Row ${row}: At least one PP row is required`);
                 return false;
             }
+            let ppW = 0;
 
             for (let j = 0; j < item.ppRows.length; j++) {
                 const pp = item.ppRows[j];
@@ -304,20 +391,38 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                     );
                     return false;
                 }
+
+                ppW += (Number(pp.count || 0) * Number(pp.weight || 0));
             }
 
-            // 5️⃣ Net weight sanity check
-            // const totalPPWeight = item.ppRows.reduce(
-            //     (sum, pp) => sum + Number(pp.weight || 0),
-            //     0
-            // );
 
-            // if (totalPPWeight >= Number(item.weight)) {
-            //     toast.error(
-            //         `Row ${row}: Total PP weight cannot be greater than or equal to gross weight`
-            //     );
-            //     return false;
-            // }
+            // 5️⃣ Labour Validation (ONLY if customer type is W)
+            if (cusType === "W") {
+
+                if (!item.labourType) {
+                    toast.error(`Row ${row}: Labour Type is required`);
+                    return false;
+                }
+
+                if (item.labourType === "P") {
+                    if (!item.labourNumPieces || Number(item.labourNumPieces) <= 0) {
+                        toast.error(`Row ${row}: Number of pieces is required`);
+                        return false;
+                    }
+                }
+
+                if (!item.labourRate || Number(item.labourRate) <= 0) {
+                    toast.error(`Row ${row}: Labour rate must be greater than 0`);
+                    return false;
+                }
+
+            }
+
+            if (Number(item.weight) - ppW < 0) {
+                toast.error(`Row ${row}: Net Weight cannot be negative`);
+                return false;
+            }
+
         }
 
         return true;
@@ -337,13 +442,31 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 0
             );
 
+            const netWeight = Math.max(0, item.weight - getTotalPPWeight(item.ppRows));
+
+            let labAmount = 0;
+
+            if (cusType == 'W') {
+                if (item.labourType == 'P') {
+                    labAmount = (item.labourRate) * item.labourNumPieces;
+                } else if (item.labourType == 'K') {
+                    labAmount = (item.labourRate / 1000) * netWeight
+                } else
+                    labAmount = item.labourRate * netWeight
+
+            }
+
             return {
                 itemName: item.itemName,
                 rateGm: item.rateGm || null,
                 ratePer: item.ratePer || null,
                 grossWeight: item.weight,
                 netWeight: item.weight - totalPP,
-                polythenes
+                polythenes,
+                labourType: item.labourType,
+                labourNumPieces: item.labourNumPieces,
+                labourRate: item.labourRate,
+                labourAmount: labAmount
             };
         });
 
@@ -405,15 +528,15 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             }
 
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/customer-items/add`,
+                `${import.meta.env.VITE_API_URL}/invoice-items/add`,
                 {
                     method: 'POST',
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({
                         Items: newIArr,
                         CusId: customerId,
-                        BillType,
-                        InvoiceNo: invoiceId + ""
+                        InvoiceNo: invoiceId + "",
+                        CusType: cusType
                     })
                 }
             );
@@ -425,10 +548,10 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 return;
             }
 
-            if(!isGenBill){
+            if (!isGenBill) {
                 toast.success("Items Updated Successfully!");
             }
-            
+
             generateBill(isGenBill);
         } catch (error) {
             console.error(error);
@@ -439,15 +562,6 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
     };
 
     async function generateBill(isGenBill) {
-
-        if (isGenBill) {
-            const blob = await pdf(
-                BillType=='R'?<BillPDF items={items} silverRate={silverRate} />:<WholeSalerBillPDFA items={items} silverRate={silverRate} />
-            ).toBlob();
-
-            window.open(URL.createObjectURL(blob));
-        }
-
         let total = 0;
 
         const updatedItems = items.map(item => {
@@ -462,10 +576,22 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
             }
 
             total += amount;
+            let labAmount = 0;
+
+            if (cusType == 'W') {
+                if (item.labourType == 'P') {
+                    labAmount = (item.labourRate) * item.labourNumPieces;
+                } else if (item.labourType == 'K') {
+                    labAmount = (item.labourRate / 1000) * netWeight
+                } else
+                    labAmount = item.labourRate * netWeight
+
+            }
 
             return {
                 ...item,
-                amount // keep as number
+                amount, // keep as number
+                labourAmount: labAmount
             };
         });
 
@@ -496,7 +622,20 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
 
         setItems(updatedItems);
         setTotalAmount(total);
+        setIsInvUpdate(true);
         // setCurrentPage(curPage);
+        setShowPdf(isGenBill);
+        // generatePDF(isGenBill);
+    }
+
+    async function generatePDF() {
+        // if (isGenBill) {
+            const blob = await pdf(
+                cusType == 'R' ? <BillPDF items={items} silverRate={silverRate} /> : <WholeSalerBillPDFA items={items} silverRate={silverRate} />
+            ).toBlob();
+
+            window.open(URL.createObjectURL(blob));
+        // }
     }
 
     async function fetchInvoiceItems() {
@@ -553,7 +692,11 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                         ppRows: polythenes,
 
                         amount: itemAmount,
-                        newItems: false
+                        newItems: false,
+                        labourType: item.labourType,
+                        labourNumPieces: item.labourType == 'P' ? Math.floor(item.labourAmount / item.labourRate) : 0,
+                        labourRate: item.labourRate,
+                        labourAmount: item.labourAmount
                     };
                 });
 
@@ -579,6 +722,13 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
     }, []);
 
     useEffect(() => {
+        if (showPdf) {
+            generatePDF();
+            setShowPdf(false);
+        }
+    }, [showPdf])
+
+    useEffect(() => {
         if (isAddingRow && lastRowRef.current) {
             lastRowRef.current.scrollIntoView({
                 behavior: "smooth",
@@ -597,9 +747,11 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                 onConfirm={deleteInvoice}
                 title="Delete Item"
                 message="Are you sure you want to delete this last item? If you delete then Invoice will delete."
+                confirmText="Delete"
+                variant="danger"
             />
 
-            <div className="w-[80%]">
+            <div className="w-[95%]">
                 {/* Items container */}
                 <div className="rounded-xl bg-white mb-3">
                     <div className="flex gap-6 items-center justify-between  border-b-2 border-gray-200 pt-5 px-7 pb-5">
@@ -614,18 +766,21 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                     <div className="px-4 pt-2 pb-2 max-h-[60vh] overflow-auto">
                         <table className="border-separate border-spacing-4">
                             <thead>
-                                <tr>
-                                    <th className="text-left font-semibold">ITEM NAME</th>
-                                    <th className="text-left font-semibold">RATE / GRAM</th>
+                                <tr className="text-sm">
+                                    <th className="text-left font-semibold">NAME</th>
+                                    <th className="text-left font-semibold whitespace-nowrap">RATE / GRAM</th>
                                     <th className="text-left font-semibold">RATE %</th>
-                                    <th className="text-left font-semibold">GROSS WEIGHT (g)</th>
-                                    <th className="text-left font-semibold">PP(QTY | WEIGHT)</th>
-                                    <th className="text-left font-semibold">AMOUNT</th>
+                                    <th className="text-left font-semibold">GR. WT(g)</th>
+                                    {cusType == 'W' ? <th className="text-left font-semibold">LBR TYPE</th> : ""}
+                                    {cusType == 'W' ? <th className="text-left font-semibold">LBR RATE</th> : ""}
+                                    <th className="text-left font-semibold">PP(QTY | WT)</th>
+                                    {cusType == 'W' ? <th className="text-left font-semibold whitespace-nowrap">LBR AMT.</th> : ""}
+                                    <th className="text-left font-semibold">AMT.</th>
                                     <th className="text-center font-semibold">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {items
+                                {/* {items
                                     .map((item, idx) => (
                                         <tr key={idx} ref={idx === items.length - 1 ? lastRowRef : null} className="align-top">
                                             <td>
@@ -691,6 +846,124 @@ export default function ViewInvoices({ invoiceNum, invoiceId, customerId, BillTy
                                                     <PlusIcon />
                                                 </button>
                                                 <button onClick={() => deleteCusItem(idx)} className="bg-red-600 hover:bg-red-700 transition-background duration-500 text-white cursor-pointer p-2 px-3 font-semibold rounded-lg text-md w-fit mx-auto outline-none border-none"><Trash2 size={23} /></button>
+                                            </td>
+                                        </tr>
+                                    ))} */}
+
+                                {items
+                                    .map((item, idx) => (
+                                        <tr key={idx} ref={idx === items.length - 1 ? lastRowRef : null} className="align-top">
+                                            <td>
+                                                <ItemAutocomplete
+                                                    value={item.itemName}
+                                                    idx={idx}
+                                                    onChange={(val) =>
+                                                        handleInputChange(idx, "itemName", val)
+                                                    }
+                                                    setItems={setItems}
+                                                    cusType={cusType}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={item.rateGm}
+                                                    onChange={(e) =>
+                                                        handleInputChange(idx, "rateGm", parseFloat(e.target.value))
+                                                    }
+                                                    disabled={item.ratePer > 0 ? true : false}
+                                                    className={`border w-full border-gray-300 px-4 py-2 rounded-lg outline-none ${item.ratePer > 0 ? 'bg-[#d3d3d39e]' : ''}`}
+                                                    placeholder="Rate (gm)"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={item.ratePer}
+                                                    onChange={(e) =>
+                                                        handleInputChange(idx, "ratePer", parseFloat(e.target.value))
+                                                    }
+                                                    disabled={item.rateGm > 0 ? true : false}
+                                                    className={`border w-full border-gray-300 px-4 py-2 rounded-lg outline-none ${item.rateGm > 0 ? 'bg-[#d3d3d39e]' : ''}`}
+                                                    placeholder="Rate (%)"
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    value={item.weight}
+                                                    onChange={(e) =>
+                                                        handleInputChange(idx, "weight", parseFloat(e.target.value))
+                                                    }
+                                                    className="border w-full border-gray-300 px-4 py-2 rounded-lg outline-none"
+                                                    placeholder="Gross Weight"
+                                                />
+                                            </td>
+                                            {cusType == 'W' ? <><td>
+                                                <div className="flex border border-gray-300 rounded-lg">
+                                                    <select
+                                                        value={item.labourType || ""}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+
+                                                            handleInputChange(idx, "labourType", value);
+                                                        }}
+                                                        className={`w-full px-4 text-sm py-2 rounded-lg outline-none`}
+                                                    >
+                                                        <option value="" className="text-sm">Select Type</option>
+                                                        <option value="P" className="text-sm">Pieces</option>
+                                                        <option value="K" className="text-sm">Kilo</option>
+                                                        <option value="G" className="text-sm">Gram</option>
+                                                    </select>
+
+                                                    {item.labourType == 'P' &&
+                                                        <input
+                                                            type="number"
+                                                            value={item.labourNumPieces}
+                                                            onChange={(e) =>
+                                                                handleInputChange(idx, "labourNumPieces", parseFloat(e.target.value))
+                                                            }
+                                                            className="border-l w-full border-gray-300 px-4 py-2 rounded-tr-lg rounded-br-lg outline-none"
+                                                            placeholder="No. of pieces"
+                                                        />
+                                                    }
+                                                </div>
+                                            </td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        value={item.labourRate}
+                                                        onChange={(e) =>
+                                                            handleInputChange(idx, "labourRate", parseFloat(e.target.value))
+                                                        }
+                                                        className="border w-full border-gray-300 px-4 py-2 rounded-lg outline-none"
+                                                        placeholder="Labour Rate"
+                                                    />
+                                                </td>
+                                            </> : ""}
+
+                                            <td>
+                                                <PPColumn
+                                                    itemIndex={idx}
+                                                    ppRows={item.ppRows}
+                                                    setItems={setItems}
+                                                />
+                                            </td>
+                                            {cusType == 'W' ?
+                                                <td className="pr-4 whitespace-nowrap font-semibold">
+                                                    Rs. {formatIndianAmount(item.labourAmount)}
+                                                </td> : <></>}
+                                            <td className="pr-4 whitespace-nowrap font-semibold">
+                                                Rs. {formatIndianAmount(item.amount)}
+                                            </td>
+                                            <td className="text-center flex items-center gap-2">
+                                                <button
+                                                    onClick={addRow}
+                                                    className="bg-[#6366F1] hover:bg-[#4B50C1] transition-background duration-500 text-white p-2 font-semibold flex items-center gap-2 rounded-lg text-md w-fit"
+                                                >
+                                                    <PlusIcon />
+                                                </button>
+                                                <button onClick={() => deleteCusItem(idx, item.itemIdx)} className="bg-red-600 hover:bg-red-700 transition-background duration-500 text-white cursor-pointer p-2 px-3 font-semibold rounded-lg text-md w-fit mx-auto outline-none border-none"><Trash2 size={23} /></button>
                                             </td>
                                         </tr>
                                     ))}

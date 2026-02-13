@@ -1,4 +1,4 @@
-import { Minus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 
 const PPColumn = ({ itemIndex, ppRows, setItems }) => {
     const HIGHLIGHT = "#6366F1";
@@ -86,7 +86,7 @@ const PPColumn = ({ itemIndex, ppRows, setItems }) => {
     return (
         <div className="flex flex-col gap-2 min-w-[160px]">
             {ppRows.map((pp, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
+                <div key={idx} className="flex gap-2 items-start">
                     <input
                         type="number"
                         value={pp.count}
@@ -94,7 +94,7 @@ const PPColumn = ({ itemIndex, ppRows, setItems }) => {
                         onChange={(e) =>
                             updatePP(idx, "count", parseInt(e.target.value) || 0)
                         }
-                        className="w-12 border border-gray-300 px-2 py-1 rounded-md outline-none"
+                        className="w-12 border border-gray-300 px-4 py-2 rounded-md outline-none"
                     />
 
                     <input
@@ -104,21 +104,29 @@ const PPColumn = ({ itemIndex, ppRows, setItems }) => {
                         onChange={(e) =>
                             updatePP(idx, "weight", parseFloat(e.target.value) || 0)
                         }
-                        className="w-20 border border-gray-300 px-2 py-1 rounded-md outline-none"
+                        className="w-14 border border-gray-300 px-4 py-2 rounded-md outline-none"
                     />
 
-                    <button
-                        onClick={() => removePP(idx)}
-                        className="bg-red-100 text-red-600 px-2 py-1 rounded-md"
-                    >
-                        <Minus size={14} />
-                    </button>
+                    <div className="flex flex-col items-center">
+                        <button
+                            onClick={addPP}
+                            className="bg-indigo-100 text-indigo-600 hover:border-indigo-600 border border-white transition-border duration-500 px-2 py-2 rounded-full"
+                        >
+                            <Plus size={14} />
+                        </button>
+                        <button
+                            onClick={() => removePP(idx)}
+                            className="bg-red-100 text-red-600 hover:border-red-600 border border-white transition-border duration-500 px-2 py-2 rounded-full"
+                        >
+                            <Minus size={14} />
+                        </button>
+                    </div>
                 </div>
             ))}
 
             <button
                 onClick={addPP}
-                className="text-sm font-semibold mt-1 text-start"
+                className="text-sm font-semibold -mt-2 text-start"
                 style={{ color: HIGHLIGHT }}
             >
                 + ADD PP

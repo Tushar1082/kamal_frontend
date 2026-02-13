@@ -5,30 +5,32 @@ import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import CustomerNamesComplete from "./CustomerNamesComplete";
 
-export function RetailWholesaleToggle({ billType = "R", setBillType }) {
+export function RetailWholesaleToggle({ cusType = "R", setCusType, isOldCus }) {
 
     return (
-        <div className="flex items-center bg-gray-200/80 p-1 rounded-2xl w-fit">
+        <div className={`flex items-center bg-gray-200/80 p-1 rounded-2xl w-fit ${isOldCus ? 'opacity-80' : 'opacity-100'}`}>
             {/* Retail Button */}
             <button
-                onClick={() => setBillType('R')}
-                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
-          ${billType === 'R'
+                onClick={() => setCusType('R')}
+                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300 outline-none
+          ${cusType === 'R'
                         ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
                         : "text-gray-700"
                     }`}
+                disabled={isOldCus}
             >
                 Retail
             </button>
 
             {/* Wholesale Button */}
             <button
-                onClick={() => setBillType('W')}
-                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300
-          ${billType === 'W'
+                onClick={() => setCusType('W')}
+                className={`px-8 py-2 rounded-2xl text-lg font-medium transition-all duration-300 outline-none
+          ${cusType === 'W'
                         ? "bg-[#6366F1] hover:bg-[#4B50C1] text-white shadow-md"
                         : "text-gray-700"
                     }`}
+                disabled={isOldCus}
             >
                 Wholesale
             </button>
@@ -47,7 +49,8 @@ export default function AddCustomers() {
         silverRate: 0
     });
     const [showLoader, setShowLoader] = useState(false);
-    const [billType, setBillType] = useState('R');
+    const [cusType, setCusType] = useState('R');
+    const [isOldCus, setIsOldCus] = useState(false);
 
     async function handleAddCustomer() {
         try {
@@ -76,7 +79,7 @@ export default function AddCustomers() {
                 headers: {
                     "content-type": "application/json"
                 },
-                body: JSON.stringify({ ...customer, billType })
+                body: JSON.stringify({ ...customer, cusType })
             });
             const result = await response.json();
 
@@ -139,14 +142,25 @@ export default function AddCustomers() {
 
 
     useEffect(() => {
+        setCustomer((prev) => ({
+            ...prev,
+            cus_id: null,
+            name: "",
+            phone: null,
+            address: null,
+            city: null
+        }));
+    }, [cusType]);
+
+    useEffect(() => {
         const silverRate = localStorage.getItem('kamal_silver_rate') ?? 0;
         setCustomer((prev) => ({ ...prev, silverRate: silverRate }));
     }, []);
 
     return (
-        <div className="flex gap-4">
+        <div className="flex gap-0">
             <SideBar showLoader={showLoader} />
-            <div className="p-5 mx-auto w-[80%]">
+            <div className="p-5 mx-auto w-[90%]">
                 <div className="">
                     <div className="flex bg-white py-4 px-7 mb-3 justify-between rounded-xl shadow-[3px_2px_10px_-1px_lightgrey]">
                         <div>
@@ -167,7 +181,7 @@ export default function AddCustomers() {
                                 </svg>
                                 Customer Information
                             </h1>
-                            <RetailWholesaleToggle billType={billType} setBillType={setBillType} />
+                            <RetailWholesaleToggle cusType={cusType} setCusType={setCusType} isOldCus={isOldCus} />
                         </div>
                         <div className="grid items-end grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-5 px-7 py-4">
                             <div className="flex flex-col">
@@ -175,6 +189,9 @@ export default function AddCustomers() {
                                 <CustomerNamesComplete
                                     value={customer.name}
                                     setCustomer={setCustomer}
+                                    setCusType={setCusType}
+                                    setIsOldCus={setIsOldCus}
+                                    cusType={cusType}
                                 />
                                 {/* <input type="text" onKeyDown={(e) => e.key === 'Enter' ? handleAddCustomer() : ''} onChange={(e) => setCustomer((prev) => ({ ...prev, name: e.target.value }))} value={customer.name} placeholder="Enter Customer Name" className="border border-gray-300 px-4 py-2 rounded-lg outline-none" /> */}
                             </div>
@@ -199,7 +216,7 @@ export default function AddCustomers() {
                     </div>
 
                 </div>
-                <AddItems customer={customer} billType={billType} setShowLoader={setShowLoader} handleAddCustomer={handleAddCustomer} />
+                <AddItems customer={customer} cusType={cusType} setShowLoader={setShowLoader} handleAddCustomer={handleAddCustomer} />
             </div>
         </div>
     );
